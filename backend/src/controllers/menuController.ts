@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { checkTrialLimit } from '../utils/trialLimits';
 
 export const getMenu = async (req: Request, res: Response) => {
     try {
@@ -41,6 +42,9 @@ export const createMenuItem = async (req: Request, res: Response) => {
             imageUrl, isAvailable, stockQuantity, minStock, maxStock
         } = req.body;
         const userId = (req as any).user.id;
+
+        // Verificar limite trial
+        await checkTrialLimit('menuItem', userId);
 
         const menuItem = await prisma.menuItem.create({
             data: {
@@ -84,9 +88,12 @@ export const createMenuItem = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Erro detalhado ao criar item:', error);
-        res.status(500).json({
+        const message = error instanceof Error ? error.message : 'Erro interno do servidor ao criar item';
+        const statusCode = message.includes('Trial') ? 403 : 500;
+
+        res.status(statusCode).json({
             success: false,
-            message: 'Erro interno do servidor ao criar item'
+            message
         });
     }
 };

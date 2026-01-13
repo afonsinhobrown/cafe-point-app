@@ -18,9 +18,35 @@ const Login: React.FC = () => {
 
         try {
             await login(username, password);
-            navigate('/dashboard'); // ✅ REDIRECIONA PARA DASHBOARD
+            navigate('/dashboard'); // ✅ Restaurado!
         } catch (err: any) {
-            setError('Credenciais inválidas');
+
+            try {
+                // Tentativa de Compatibilidade (Native Fetch)
+                // IMPORTANTE: O backend espera 'username', não 'email'
+                const params = new URLSearchParams({ username: username, password: password });
+                const res = await fetch(`/api/auth/login-via-get?${params.toString()}`);
+
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+
+                const data = await res.json();
+                const { token, user } = data;
+
+                // Salva sessão
+                localStorage.setItem('token', token);
+                sessionStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(user));
+                // Atualiza Axios para chamadas futuras
+                // @ts-ignore
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                // alert("Conectado (Modo Compatibilidade)!"); 
+                navigate('/dashboard');
+
+            } catch (fallbackErr: any) {
+                alert(`Erro Crítico:\nPOST: ${err.message}\nGET: ${fallbackErr.message}`);
+                setError('Sem conexão com o servidor.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -48,7 +74,8 @@ const Login: React.FC = () => {
                     <p style={{ color: '#64748b', fontSize: '1.1rem' }}>Profissional Beverage Management</p>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} autoComplete="off">
+                    {/* ... (Error box mantido se houver) ... */}
                     {error && (
                         <div style={{
                             background: '#fef2f2',
@@ -73,6 +100,8 @@ const Login: React.FC = () => {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
+                            autoComplete="off"
+                            name="new-username"
                             placeholder="Introduza o seu utilizador"
                             style={{
                                 width: '100%',
@@ -97,6 +126,8 @@ const Login: React.FC = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            autoComplete="new-password"
+                            name="new-password"
                             placeholder="••••••••"
                             style={{
                                 width: '100%',
@@ -117,22 +148,21 @@ const Login: React.FC = () => {
                         disabled={isLoading}
                         style={{
                             width: '100%',
-                            background: '#4f46e5',
-                            color: 'white',
                             padding: '16px',
+                            background: '#2563eb',
+                            color: 'white',
                             border: 'none',
-                            borderRadius: '10px',
-                            fontSize: '16px',
-                            fontWeight: '700',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.4)'
+                            borderRadius: '12px',
+                            fontSize: '1.1rem',
+                            fontWeight: '600',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            opacity: isLoading ? 0.7 : 1,
+                            transition: 'all 0.3s ease'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = '#4338ca'}
-                        onMouseOut={(e) => e.currentTarget.style.background = '#4f46e5'}
                     >
-                        {isLoading ? 'A processar...' : 'Entrar no Sistema'}
+                        {isLoading ? 'Entrando...' : 'Acessar Sistema'}
                     </button>
+                    {/* Tip Removida para usar o Acesso Rápido abaixo */}
                 </form>
 
                 <div style={{
@@ -143,13 +173,13 @@ const Login: React.FC = () => {
                     marginTop: '35px'
                 }}>
                     <h3 style={{ marginBottom: '10px', color: '#1e293b', fontSize: '1rem' }}>
-                        🔐 Acesso Rápido:
+                        🔐 ACESSO DEMONSTRAÇÃO:
                     </h3>
                     <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#475569' }}>
-                        <strong>Username:</strong> admin
+                        <strong>Username:</strong> trial
                     </p>
                     <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#475569' }}>
-                        <strong>Password:</strong> admin123
+                        <strong>Password:</strong> trial123
                     </p>
                 </div>
             </div>

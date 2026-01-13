@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { checkTrialLimit } from '../utils/trialLimits';
 
 export const getStockMovements = async (req: Request, res: Response) => {
     try {
@@ -43,6 +44,9 @@ export const createManualMovement = async (req: Request, res: Response) => {
     try {
         const { menuItemId, quantity, type, reason, supplierId, purchasePrice, sellingPrice } = req.body;
         const userId = (req as any).user.id;
+
+        // Verificar limite trial
+        await checkTrialLimit('stockMovement', userId);
 
         const movement = await prisma.$transaction(async (tx) => {
             // Se for entrada (compra), opcionalmente atualizar os preços atuais do produto
@@ -89,9 +93,12 @@ export const createManualMovement = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Erro ao criar movimento manual:', error);
-        res.status(500).json({
+        const message = error instanceof Error ? error.message : 'Erro interno do servidor';
+        const statusCode = message.includes('Trial') ? 403 : 500;
+
+        res.status(statusCode).json({
             success: false,
-            message: 'Erro interno do servidor'
+            message
         });
     }
 };

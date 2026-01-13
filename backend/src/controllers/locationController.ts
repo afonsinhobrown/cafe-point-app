@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { checkTrialLimit } from '../utils/trialLimits';
 
 export const getLocations = async (req: Request, res: Response) => {
     try {
@@ -41,6 +42,11 @@ export const createLocation = async (req: Request, res: Response) => {
             });
         }
 
+        const userId = (req as any).user?.id;
+        if (userId) {
+            await checkTrialLimit('location', userId);
+        }
+
         const location = await prisma.location.create({
             data: { name, description }
         });
@@ -52,9 +58,12 @@ export const createLocation = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Erro ao criar localização:', error);
-        res.status(500).json({
+        const message = error instanceof Error ? error.message : 'Erro interno do servidor';
+        const statusCode = message.includes('Trial') ? 403 : 500;
+
+        res.status(statusCode).json({
             success: false,
-            message: 'Erro interno do servidor'
+            message
         });
     }
 };

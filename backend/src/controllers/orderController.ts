@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { AuthRequest } from '../middleware/auth';
+import { checkTrialLimit } from '../utils/trialLimits';
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
     try {
@@ -13,6 +14,9 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
                 message: 'Utilizador não autenticado'
             });
         }
+
+        // Verificar limite trial
+        await checkTrialLimit('order', userId);
 
         // Verificar se a mesa existe
         const table = await prisma.table.findUnique({
@@ -143,9 +147,12 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         });
     } catch (error) {
         console.error('Erro ao criar pedido:', error);
-        res.status(500).json({
+        const message = error instanceof Error ? error.message : 'Erro interno do servidor';
+        const statusCode = message.includes('Trial') ? 403 : 500;
+
+        res.status(statusCode).json({
             success: false,
-            message: 'Erro interno do servidor'
+            message
         });
     }
 };

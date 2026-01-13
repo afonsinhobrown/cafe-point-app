@@ -35,41 +35,46 @@ export const getBillingStats = async (req: Request, res: Response) => {
             }
         };
 
-        console.log(`Buscando estatísticas para o período: ${period} (${startDate.toISOString()} até ${endDate.toISOString()})`);
+        console.log(`Buscando (Modo Manual) para período: ${period}`);
 
-        const stats = await prisma.order.groupBy({
-            by: ['status'],
-            _sum: {
-                totalAmount: true
-            },
-            _count: {
-                id: true
-            },
+        // 🛑 MODO MANUAL: Busca tudo e soma no JS
+        const allStatsOrders = await prisma.order.findMany({
             where: {
-                status: { not: 'CANCELLED' },
-                ...timeRange
+                status: { not: 'CANCELLED' }
+                // Sem filtro de data temporariamente
             }
         });
 
-        console.log('Resultados do Agrupamento (stats):', stats);
+        const REVENUE_STATUSES = ['PAID']; // SERVED (Entregue) ainda é pendente de pagamento
 
-        const totalRevenue = stats.find(s => s.status === 'PAID')?._sum.totalAmount || 0;
-        const paidCount = stats.find(s => s.status === 'PAID')?._count.id || 0;
+        let totalRevenue = 0;
+        let paidCount = 0;
+        let pendingRevenue = 0;
+        let pendingCount = 0;
 
-        const pendingRevenue = stats
-            .filter(s => s.status !== 'PAID')
-            .reduce((acc, s) => acc + Number(s._sum.totalAmount || 0), 0);
-        const pendingCount = stats
-            .filter(s => s.status !== 'PAID')
-            .reduce((acc, s) => acc + s._count.id, 0);
+        allStatsOrders.forEach(o => {
+            const val = Number(o.totalAmount || 0);
+            if (REVENUE_STATUSES.includes(o.status)) {
+                totalRevenue += val;
+                paidCount++;
+            } else {
+                // Se não está PAGO, mas também não CANCELADO, é Pendente (Inclui SERVED, READY, ETC)
+                pendingRevenue += val;
+                pendingCount++;
+            }
+        });
 
-        console.log('Resumo Calculado:', { totalRevenue, pendingRevenue, pendingCount });
+        console.log('Resumo Calculado (Manual):', { totalRevenue, pendingRevenue });
 
-        // Vendas por categoria (apenas pagas para faturação real)
+        // Vendas por categoria (Query DEBUG - SEM DATA)
         const paidOrders = await prisma.order.findMany({
             where: {
-                status: 'PAID',
-                ...timeRange
+                // Incluimos SERVED aqui para o gráfico de categorias mostrar o que saiu
+                OR: [
+                    { status: 'PAID' },
+                    { status: 'SERVED' }
+                ],
+                // ...timeRange // 🛑 FILTRO DE DATA DESATIVADO PARA DEBUG
             },
             include: {
                 orderItems: {
@@ -92,6 +97,8 @@ export const getBillingStats = async (req: Request, res: Response) => {
 
                 salesByCategory[cat] = (salesByCategory[cat] || 0) + revenue;
                 costByCategory[cat] = (costByCategory[cat] || 0) + cost;
+
+                // Custo só conta se o pedido foi servido/pago (produto saiu do estoque)
                 totalCost += cost;
             });
         });
@@ -99,10 +106,11 @@ export const getBillingStats = async (req: Request, res: Response) => {
         const grossProfit = totalRevenue - totalCost;
         const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
+        // 🛑 DEBUG: REATIVANDO Compras mas SEM DATA
         // Calcular total de compras (investimento em stock)
         const purchasesWithSupplier = await prisma.stockMovement.findMany({
             where: {
-                ...timeRange,
+                // ...timeRange, // Sem data tb em compras
                 type: 'ENTRY'
             },
             include: { supplier: true }
@@ -117,6 +125,10 @@ export const getBillingStats = async (req: Request, res: Response) => {
             const value = Math.abs(m.quantity) * (m.purchasePrice || 0);
             purchasesBySupplier[sName] = (purchasesBySupplier[sName] || 0) + value;
         });
+
+        // Mock values para evitar erro no frontend (REMOVIDO MOCK)
+        // const totalPurchases = 0;
+        // const purchasesBySupplier = {};
 
         res.json({
             success: true,
@@ -139,7 +151,7 @@ export const getBillingStats = async (req: Request, res: Response) => {
         console.error('Erro ao buscar estatísticas:', error);
         res.status(500).json({
             success: false,
-            message: 'Erro interno do servidor'
+            message: error instanceof Error ? error.message : String(error)
         });
     }
 };

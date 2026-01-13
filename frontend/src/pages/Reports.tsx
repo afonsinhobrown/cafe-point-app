@@ -4,7 +4,7 @@ import ReceiptModal from '../components/ReceiptModal';
 import './Reports.css';
 
 const Reports: React.FC = () => {
-    const [period, setPeriod] = useState('day');
+    const [period, setPeriod] = useState('month');
     const [stats, setStats] = useState<any>({
         totalRevenue: 0,
         pendingRevenue: 0,
@@ -99,7 +99,7 @@ const Reports: React.FC = () => {
     return (
         <div className="reports-page printable-report">
             <header className="reports-header no-print">
-                <h1>📊 Relatórios e Faturação</h1>
+                <h1>📊 Financeiro</h1>
                 <div className="header-actions">
                     <button className="print-report-btn" onClick={handlePrintReport}>
                         🖨️ Imprimir Relatório
@@ -119,7 +119,7 @@ const Reports: React.FC = () => {
             </header>
 
             <div className="print-header only-print">
-                <h1>Relatório de Faturação - CaféPoint</h1>
+                <h1>Relatório Financeiro - CaféPoint</h1>
                 <p>Período: {periods.find(p => p.id === period)?.label}</p>
                 <p>Gerado em: {new Date().toLocaleString()}</p>
             </div>

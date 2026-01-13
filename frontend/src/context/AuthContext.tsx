@@ -26,15 +26,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const token = localStorage.getItem('token');
 
         if (savedUser && token) {
-            setUser(JSON.parse(savedUser));
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch (e) {
+                console.error('Dados de usuário corrompidos, limpando...', e);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            }
         }
         setIsLoading(false);
     }, []);
 
     const login = async (username: string, password: string) => {
         try {
-            // ✅ LOGIN REAL com a API
-            const response = await fetch('http://localhost:5000/api/auth/login', {
+            // ✅ LOGIN REAL com API Relativa (Fix para Mobile)
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
