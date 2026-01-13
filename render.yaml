@@ -19,5 +19,6 @@ services:
 databases:
   - name: cafepoint-db
     plan: free
+    region: frankfurt
     databaseName: cafepoint
     user: admin
