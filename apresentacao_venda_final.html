@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café Point - Business Deck</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1; /* Indigo */
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden; /* Hide scrollbars for presentation mode */
+        }
+
+        .slides-container {
+            height: 100vh;
+            width: 100vw;
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .slide {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* --- TYPOGRAPHY & LAYOUT --- */
+        .content {
+            max-width: 1200px;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .active .content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1.title {
+            font-size: 5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin: 0;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2.subtitle {
+            font-size: 2rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+        }
+
+        p.lead {
+            font-size: 1.8rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            line-height: 1.5;
+            margin-top: 2rem;
+        }
+
+        /* --- CARDS & GRIDS --- */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            margin-top: 3rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            border-radius: 20px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px -10px var(--accent-glow);
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            margin-top: 0;
+            color: #fff;
+        }
+
+        .card p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--success);
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .problem-stat { color: var(--danger); }
+
+        /* --- NAVIGATION HINT --- */
+        .nav-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .nav-btn:hover { background: var(--accent); }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.6s ease;
+            z-index: 1000;
+        }
+
+        /* --- ANIMATIONS CLASSES --- */
+        .highlight { color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="slides-container" id="slidesContainer">
+
+        <!-- SLIDE 1: ABERTURA -->
+        <div class="slide active">
+            <div class="content">
+                <h2 class="subtitle">Apresentação Executiva</h2>
+                <h1 class="title">Café Point.</h1>
+                <p class="lead">Não é apenas um software. É o fim do caos operacional no seu restaurante.</p>
+                <div style="margin-top: 4rem; opacity: 0.6; font-size: 0.9rem;">
+                    Pressione as setas ⬇️ ou ➡️ para navegar
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: O PROBLEMA "DOER" -->
+        <div class="slide">
+            <div class="content">
+                <h1 class="title" style="font-size: 4rem;">Quanto dinheiro estamos a <span style="color: var(--danger)">queimar</span>?</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <span class="stat-number problem-stat">20%</span>
+                        <h3>Desperdício de Stock</h3>
+                        <p>Sem controlo rigoroso, ingredientes desaparecem ou estragam. O lucro vai para o lixo antes de chegar ao prato.</p>
+                    </div>
+                    <div class="card">
+                        <span class="stat-number problem-stat">15min</span>
+                        <h3>Atraso Médio</h3>
+                        <p>Pedidos em papel, letra ilegível e falhas de comunicação entre garçom e cozinha custam tempo. Tempo é rotação de mesa.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: A SOLUÇÃO -->
+        <div class="slide">
+            <div class="content">
+                <h2 class="subtitle">A Solução</h2>
+                <h1 class="title">Controlo Total. <br><span class="highlight">Em Tempo Real.</span></h1>
+                <p class="lead">Uma plataforma unificada que conecta o pedido do cliente à baixa no stock em milissegundos.</p>
+                
+                <div class="grid-3">
+                    <div class="card" style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📱</div>
+                        <h3>POS Móvel</h3>
+                        <p>O garçom lança o pedido na mesa. Zero deslocações.</p>
+                    </div>
+                    <div class="card" style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">👨‍🍳</div>
+                        <h3>KDS Cozinha</h3>
+                        <p>Ecrãs substituem papel. Fila organizada. Cozinha silenciosa.</p>
+                    </div>
+                    <div class="card" style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📉</div>
+                        <h3>Stock Auto</h3>
+                        <p>Vendeu um hambúrguer? O sistema baixa o pão e a carne. Automático.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: ROI (DINHEIRO) -->
+        <div class="slide">
+            <div class="content">
+                <h1 class="title">O Impacto Financeiro</h1>
+                <p class="lead">O Café Point não é um custo. É um investimento que se paga em 3 meses.</p>
+                
+                <div class="grid-2" style="margin-top: 4rem;">
+                    <div>
+                        <h3 style="font-size: 2rem; margin-bottom: 1rem; color: var(--success);">✅ Mais Receita</h3>
+                        <ul style="font-size: 1.5rem; line-height: 2; list-style: none; padding: 0;">
+                            <li>+ Rotação de Mesas (Atendimento Rápido)</li>
+                            <li>+ Ticket Médio (Upsell sugerido no sistema)</li>
+                            <li>+ Fidelização (Menos erros, clientes felizes)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 2rem; margin-bottom: 1rem; color: var(--success);">⬇️ Menos Custos</h3>
+                        <ul style="font-size: 1.5rem; line-height: 2; list-style: none; padding: 0;">
+                            <li>- Desperdício de Alimentos</li>
+                            <li>- Roubos e Desvios (Auditoria Total)</li>
+                            <li>- Erros de Pedido (Pratos devolvidos)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: CONCLUSÃO -->
+        <div class="slide">
+            <div class="content" style="text-align: center;">
+                <h1 class="title">Vamos Modernizar?</h1>
+                <p class="lead" style="margin: 2rem auto;">A implementação leva apenas <span class="highlight">3 semanas</span>.</p>
+                
+                <div style="margin-top: 4rem;">
+                    <button class="nav-btn" onclick="startDemo()" style="padding: 1rem 3rem; font-size: 1.5rem; border-radius: 50px; background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer;">
+                        Ver Demonstração Agora
+                    </button>
+                </div>
+                
+                <p style="margin-top: 3rem; font-size: 1rem; color: var(--text-secondary);">Café Point v1.0 • Pronto para Escalar</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">⬆️</button>
+        <button class="nav-btn" onclick="nextSlide()">⬇️</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const container = document.getElementById('slidesContainer');
+        const progressBar = document.getElementById('progressBar');
+
+        function updateSlide() {
+            // Remove active class from all
+            slides.forEach(s => s.classList.remove('active'));
+            // Add to current
+            slides[currentSlide].classList.add('active');
+            
+            // Move container
+            container.style.transform = `translateY(-${currentSlide * 100}vh)`;
+            
+            // Update progress
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+        
+        function startDemo() {
+            // Se estiver no mesmo servidor, pode redirecionar para o login
+            window.location.href = 'http://localhost:3000';
+            // Ou alertar
+            // alert('Iniciando demo...');
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>

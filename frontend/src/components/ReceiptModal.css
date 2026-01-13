@@ -1,0 +1,157 @@
+.receipt-container {
+    background: white;
+    width: 350px;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    font-family: 'Courier New', Courier, monospace;
+    color: #000;
+}
+
+.receipt-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.receipt-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.receipt-header p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.receipt-info {
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+}
+
+.receipt-info p {
+    margin: 3px 0;
+}
+
+.receipt-divider {
+    border-top: 1px dashed #ccc;
+    margin: 15px 0;
+}
+
+.receipt-items {
+    font-size: 0.9rem;
+}
+
+.receipt-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.receipt-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin: 15px 0;
+}
+
+.receipt-qr {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.receipt-qr p {
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+}
+
+.receipt-qr img {
+    border: 1px solid #eee;
+    padding: 10px;
+    background: white;
+}
+
+.qr-code-text {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 5px;
+    color: #999;
+}
+
+.receipt-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 20px;
+}
+
+.receipt-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.receipt-actions button {
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: sans-serif;
+}
+
+.receipt-actions .print-btn {
+    background: #4f46e5;
+    color: white;
+}
+
+.receipt-actions .close-btn {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+@media print {
+
+    /* Esconde tudo que não for o recibo */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Garante que o container do recibo e seus filhos sejam visíveis */
+    .receipt-container,
+    .receipt-container * {
+        visibility: visible;
+    }
+
+    /* Posiciona o recibo no topo da página de impressão */
+    .receipt-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 80mm;
+        /* Largura padrão de impressora térmica */
+        margin: 0;
+        padding: 5mm;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .no-print,
+    .receipt-actions,
+    button {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* Remove cabeçalhos e rodapés padrão do navegador */
+    @page {
+        margin: 0;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+}

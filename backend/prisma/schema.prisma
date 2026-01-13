@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String
+  role      UserRole @default(WAITER)
+  createdAt DateTime @default(now())
+  
+  orders Order[]
+}
+
+model Location {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  
+  tables      Table[]
+}
+
+model Table {
+  id          Int      @id @default(autoincrement())
+  number      Int      @unique
+  capacity    Int
+  status      TableStatus @default(AVAILABLE)
+  locationId  Int?
+  location    Location?   @relation(fields: [locationId], references: [id])
+  type        TableType   @default(TABLE_4)
+  
+  orders Order[]
+}
+
+model Order {
+  id          Int       @id @default(autoincrement())
+  tableId     Int
+  table       Table     @relation(fields: [tableId], references: [id])
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  status      OrderStatus @default(PENDING)
+  totalAmount Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  Int
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity    Int      @default(1)
+  notes       String?
+  price       Float
+  course      CourseType @default(MAIN)
+}
+
+model MenuItem {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Float    // Current selling price
+  costPrice     Float?   @default(0) // Current cost price (last purchase)
+  category      String
+  
+  brandId       Int?
+  brand         Brand?    @relation(fields: [brandId], references: [id])
+  
+  supplierId    Int?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  
+  volume        String?
+  unit          String?  @default("un")
+  barcode       String?
+  expiryDate    DateTime?
+  imageUrl      String?
+  isAvailable   Boolean  @default(true)
+  stockQuantity Int?     @default(0)
+  minStock      Int?     @default(5)
+  maxStock      Int?
+  
+  orderItems      OrderItem[]
+  stockMovements  StockMovement[]
+}
+
+model Brand {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  items     MenuItem[]
+}
+
+model Supplier {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  nuit        String?   // Tax ID in Mozambique
+  email       String?
+  phone       String?
+  address     String?
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  items     MenuItem[]
+  movements StockMovement[]
+}
+
+model StockMovement {
+  id            Int      @id @default(autoincrement())
+  menuItemId    Int
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity      Int
+  type          MovementType // ENTRY, EXIT_SALE, LOSS, ADJUSTMENT
+  
+  // Historical prices at the time of movement
+  purchasePrice Float?   // Cost price when buying
+  sellingPrice  Float?   // Selling price at that time
+  
+  supplierId    Int?     // Link movement to supplier for ENTRY
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  
+  reason        String?
+  createdAt     DateTime @default(now())
+  userId        Int
+}
+
+enum MovementType {
+  ENTRY
+  EXIT_SALE
+  LOSS
+  ADJUSTMENT
+}
+
+enum UserRole {
+  WAITER
+  KITCHEN
+  ADMIN
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+}
+
+enum TableType {
+  BAR_COUNTER
+  TABLE_2
+  TABLE_4  
+  TABLE_6
+  TABLE_8
+  BOOTH
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  PAID
+  CANCELLED
+}
+
+enum CourseType {
+  STARTER
+  MAIN
+  DESSERT
+  DRINK
+}

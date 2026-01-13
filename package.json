@@ -1,0 +1,14 @@
+{
+    "name": "cafe-point-monorepo",
+    "version": "1.0.0",
+    "scripts": {
+        "install:all": "cd backend && npm install && cd ../frontend && npm install",
+        "start:backend": "cd backend && npm run dev",
+        "start:frontend": "cd frontend && npm run dev",
+        "start:all": "npm run install:all && concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+        "setup:db": "cd backend && npx prisma generate && npx prisma db push && npx ts-node prisma/create-admin.ts"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

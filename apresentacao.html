@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação Café Point</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #1e1b4b;
+            --accent: #f59e0b;
+            --text: #333;
+            --bg: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e2e8f0;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .slide {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            box-sizing: border-box;
+            padding: 4rem;
+            position: relative;
+            page-break-after: always;
+            border-bottom: 5px solid var(--primary);
+        }
+
+        .slide:nth-child(even) {
+            background-color: var(--bg);
+        }
+
+        .intro {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        h2 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--accent);
+            display: inline-block;
+            padding-bottom: 0.5rem;
+        }
+        
+        .intro h2 {
+            color: var(--accent);
+            border-color: white;
+            font-size: 2rem;
+            font-weight: 300;
+        }
+
+        p {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            max-width: 800px;
+            text-align: center;
+            color: #475569;
+        }
+
+        .intro p {
+            color: #e2e8f0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        
+        .card h3 {
+            color: var(--secondary);
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        ul {
+            text-align: left;
+            font-size: 1.4rem;
+            line-height: 1.8;
+        }
+        
+        li {
+            margin-bottom: 1rem;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        @media print {
+            body { background: white; }
+            .slide { border-bottom: none; height: 100vh; }
+        }
+        
+        .nav-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        body:hover .nav-hint {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slide 1: Capa -->
+    <div class="slide intro">
+        <h1>Café Point</h1>
+        <h2>Sistema Integrado de Gestão</h2>
+        <p>Modernizando o atendimento e controlo para o futuro.</p>
+        <div class="footer">Apresentação Executiva 2026</div>
+    </div>
+
+    <!-- Slide 2: O Problema -->
+    <div class="slide">
+        <h2>O Desafio Atual</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>🚫 Ineficiência Operacional</h3>
+                <p>Pedidos anotados à mão, erros de comunicação com a cozinha e atrasos no atendimento.</p>
+            </div>
+            <div class="card">
+                <h3>📉 Falta de Controlo</h3>
+                <p>Dificuldade em rastrear stock em tempo real, quebras não identificadas e falta de métricas precisas.</p>
+            </div>
+        </div>
+        <div class="footer">Slide 2/5</div>
+    </div>
+
+    <!-- Slide 3: A Solução -->
+    <div class="slide">
+        <h2>A Solução: Café Point</h2>
+        <p>Uma plataforma digital completa que conecta o salão, a cozinha e a gerência em tempo real.</p>
+        <ul style="margin-top: 3rem;">
+            <li><strong>POS Digital:</strong> Atendimento rápido via Tablet/PC.</li>
+            <li><strong>KDS (Kitchen Display):</strong> Cozinha sem papel, com filas automáticas.</li>
+            <li><strong>Gestão de Stock:</strong> Controle de inventário integrado às vendas.</li>
+            <li><strong>Inteligência:</strong> Relatórios detalhados de vendas e performance.</li>
+        </ul>
+        <div class="footer">Slide 3/5</div>
+    </div>
+
+    <!-- Slide 4: Principais Funcionalidades -->
+    <div class="slide">
+        <h2>Funcionalidades Chave</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>🍽️ Mesas & Pedidos</h3>
+                <p>Mapa visual de mesas, status em cores (Livre/Ocupada) e envio instantâneo para produção.</p>
+            </div>
+            <div class="card">
+                <h3>📦 Inventário Inteligente</h3>
+                <p>Fichas técnicas, alertas de stock mínimo e histórico de movimentações (Entradas/Saídas).</p>
+            </div>
+            <div class="card">
+                <h3>👨‍🍳 Cozinha Conectada</h3>
+                <p>Ecrã de preparação que organiza os pedidos por ordem de chegada e prioridade.</p>
+            </div>
+            <div class="card">
+                <h3>📊 Dashboard</h3>
+                <p>Visão geral do negócio para tomada de decisões rápidas.</p>
+            </div>
+        </div>
+        <div class="footer">Slide 4/5</div>
+    </div>
+
+    <!-- Slide 5: Conclusão -->
+    <div class="slide intro">
+        <h2>Próximos Passos</h2>
+        <p style="margin-top: 2rem;">Implementação Piloto & Treinamento da Equipe</p>
+        <h3 style="margin-top: 3rem; color: white;">Obrigado!</h3>
+        <div class="footer">Café Point 2026</div>
+    </div>
+
+    <div class="nav-hint">Role para baixo para ver os próximos slides ou imprima como PDF</div>
+
+</body>
+</html>

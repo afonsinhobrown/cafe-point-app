@@ -1,0 +1,119 @@
+.orders-page {
+    padding: 32px;
+}
+
+.orders-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.filter-bar select {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 1rem;
+    color: #475569;
+    outline: none;
+}
+
+.orders-list-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.orders-full-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.orders-full-table th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 16px;
+    font-size: 0.85rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.orders-full-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.items-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.total-cell {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.status-location-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.location-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.order-status-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.order-status-pill.pending {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.order-status-pill.preparing {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.order-status-pill.ready {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.order-status-pill.served {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.order-status-pill.paid {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.loading-state,
+.no-orders {
+    text-align: center;
+    padding: 64px;
+    color: #64748b;
+}

@@ -1,0 +1,13 @@
+run = "npm run start:all"
+entrypoint = "backend/src/index.ts"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "npm run start:all"]
+deploymentTarget = "cloudrun"
+
+[env]
+NODE_ENV = "production"
+PORT = "5000"

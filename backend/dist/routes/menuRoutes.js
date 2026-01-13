@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const menuController_1 = require("../controllers/menuController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.get('/', menuController_1.getMenu);
+router.post('/', auth_1.authenticate, menuController_1.createMenuItem);
+router.put('/:id', auth_1.authenticate, menuController_1.updateMenuItem);
+router.delete('/:id', auth_1.authenticate, menuController_1.deleteMenuItem);
+exports.default = router;

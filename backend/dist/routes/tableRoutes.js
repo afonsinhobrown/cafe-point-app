@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const tableController_1 = require("../controllers/tableController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticate);
+router.get('/', tableController_1.getTables);
+router.post('/', tableController_1.createTable);
+router.put('/:id', tableController_1.updateTable);
+router.delete('/:id', tableController_1.deleteTable);
+router.patch('/:id/status', tableController_1.updateTableStatus);
+exports.default = router;
