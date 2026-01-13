@@ -9,7 +9,7 @@ echo "🚀 Iniciando Build para Render..."
 echo "📦 Instalando e construindo Frontend..."
 cd frontend
 rm -rf node_modules package-lock.json # Limpar cache
-npm install
+npm install --include=dev
 npm run build
 cd ..
 
@@ -23,7 +23,7 @@ cp -r frontend/dist/* backend/public/
 echo "⚙️ Instalando e construindo Backend..."
 cd backend
 rm -rf node_modules package-lock.json # Limpar cache
-npm install
+npm install --include=dev
 npx prisma generate
 npm run build
 
