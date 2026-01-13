@@ -5,7 +5,6 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "prisma generate && prisma db push && tsc",
     "start": "node dist/index.js",
-    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
