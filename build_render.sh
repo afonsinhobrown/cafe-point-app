@@ -8,7 +8,7 @@ echo "🚀 Iniciando Build para Render..."
 # 1. Build do Frontend
 echo "📦 Instalando e construindo Frontend..."
 cd frontend
-npm install
+npm install --production=false
 npm run build
 cd ..
 
@@ -21,7 +21,7 @@ cp -r frontend/dist/* backend/public/
 # 3. Build do Backend
 echo "⚙️ Instalando e construindo Backend..."
 cd backend
-npm install
+npm install --production=false
 npx prisma generate
 npm run build
 
