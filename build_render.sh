@@ -8,7 +8,8 @@ echo "🚀 Iniciando Build para Render..."
 # 1. Build do Frontend
 echo "📦 Instalando e construindo Frontend..."
 cd frontend
-npm install --production=false
+rm -rf node_modules package-lock.json # Limpar cache
+npm install
 npm run build
 cd ..
 
@@ -21,7 +22,8 @@ cp -r frontend/dist/* backend/public/
 # 3. Build do Backend
 echo "⚙️ Instalando e construindo Backend..."
 cd backend
-npm install --production=false
+rm -rf node_modules package-lock.json # Limpar cache
+npm install
 npx prisma generate
 npm run build
 
