@@ -1,0 +1,29 @@
+{
+  "services":
+    [
+      {
+        "type": "web",
+        "name": "cafepoint-backend",
+        "runtime": "node",
+        "region": "frankfurt",
+        "plan": "free",
+        "rootDir": "backend",
+        "buildCommand": "npm install && npm run build",
+        "startCommand": "npm start",
+        "envVars":
+          [
+            { "key": "NODE_ENV", "value": "production" },
+            { "key": "PORT", "value": "5000" },
+          ],
+      },
+    ],
+  "databases":
+    [
+      {
+        "name": "cafepoint-db",
+        "plan": "free",
+        "databaseName": "cafepoint",
+        "user": "cafepoint",
+      },
+    ],
+}
