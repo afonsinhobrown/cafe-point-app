@@ -46,10 +46,8 @@ npx tsx create_trial_user.ts
 ### Opção A: Início Rápido (Recomendado)
 Para demonstrações e uso local rápido, utilize o script automático na raiz do projeto:
 
-**Arquivo:** `INICIAR_SISTEMA.bat`
-- Basta clicar duas vezes neste arquivo.
-- Ele iniciará o Backend e criará um túnel público (via Serveo/Localhost.run) para acesso móvel.
-- O Frontend é servido automaticamente pelo Backend (Monolito).
+c# Na pasta raiz
+./INICIAR_SISTEMA.bat
 
 ### Opção B: Desenvolvimento (Manual)
 Se precisar trabalhar no código:
@@ -85,10 +83,13 @@ Este script:
   - Admin: `admin` / `admin123` (Acesso total)
   - Trial: `trial` / `trial123` (Limitado a 10 registros por categoria)
 - **Financeiro:** Relatórios corregidos para mostrar Faturação Realizada (Paga) e Pendente (Servida).
-- **Mobile:** Acesso via URL pública gerada pelo túnel.
+- **Mobile:** Acesso via URL pública: `https://cafepoint-final.serveousercontent.com` (Pode demorar alguns segundos para ativar).
 
 ## 7. Solução de Problemas Comuns
-- **Erro 500 no Financeiro:** Verifique se o `getBillingStats` está consultando status válidos (PAID, SERVED). Evite status inexistentes como COMPLETED.
+- **Erro 502 (Bad Gateway) na URL Mobile:**
+  - Isso significa que o túnel (Serveo) ainda não conseguiu conectar com o seu computador.
+  - **Solução:** Aguarde 30 segundos e recarregue a página. Se persistir, feche todas as janelas pretas e rode o `INICIAR_SISTEMA.bat` novamente.
+- **Erro 500 no Financeiro:** Verifique se o `getBillingStats` está consultando status válidos (PAID, SERVED).
 - **Tela Branca no Mobile:** Certifique-se de usar a URL pública (https) e não localhost.
 - **Login falha no Mobile:** O sistema possui fallback automático para método GET caso a rede bloqueie POST.
 
