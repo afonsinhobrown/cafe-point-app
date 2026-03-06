@@ -71,13 +71,13 @@ RUN echo "==> Verifying build..." && \
 
 # Start command - sequential with explicit error handling
 CMD ["/bin/sh", "-c", "\
-  echo '==> CafePoint Deployment Starting' && \
-  echo '==> DATABASE_URL:' $DATABASE_URL && \
-  echo '==> Pushing schema to database...' && \
-  npx prisma db push --accept-data-loss --skip-generate && \
-  echo '==> Schema pushed successfully' && \
-  echo '==> Running seed (optional)...' && \
-  (node dist/prisma/seed.js || echo '==> Seed skipped') && \
-  echo '==> Starting Node.js server...' && \
-  node dist/src/index.js \
-"]
+    echo '==> CafePoint Deployment Starting' && \
+    echo '==> DATABASE_URL:' $DATABASE_URL && \
+    echo '==> Pushing schema to database...' && \
+    npx prisma db push --accept-data-loss --skip-generate && \
+    echo '==> Schema pushed successfully' && \
+    echo '==> Running seed (optional)...' && \
+    (node dist/prisma/seed.js || echo '==> Seed skipped') && \
+    echo '==> Starting Node.js server...' && \
+    node dist/src/index.js \
+    "]
