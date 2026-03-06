@@ -114,13 +114,21 @@ setupSocket(io);
 const publicPath = path.join(__dirname, '../public');
 const uploadsPath = path.join(__dirname, '../uploads');
 
-if (!fs.existsSync(uploadsPath)) {
-    fs.mkdirSync(uploadsPath, { recursive: true });
+try {
+    if (!fs.existsSync(uploadsPath)) {
+        fs.mkdirSync(uploadsPath, { recursive: true });
+        console.log('✅ Uploads directory created');
+    }
+    if (fs.existsSync(publicPath)) {
+        console.log('📂 Static Path:', publicPath);
+        app.use(express.static(publicPath));
+    } else {
+        console.warn('⚠️ Public path not found:', publicPath);
+    }
+    app.use('/uploads', express.static(uploadsPath));
+} catch (error) {
+    console.error('❌ Error setting up static paths:', error);
 }
-
-console.log('📂 Static Path:', publicPath);
-app.use(express.static(publicPath));
-app.use('/uploads', express.static(uploadsPath));
 
 // ✅ Fallback para SPA (React Router)
 app.get('*', (req, res, next) => {

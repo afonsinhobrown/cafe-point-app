@@ -44,8 +44,12 @@ if (!license.valid) {
     connectDatabase()
         .then(async () => {
             console.log('✅ Database connected successfully');
-            await ensureSuperAdmin(); // 👑 Garante Admin ao iniciar
-            console.log('✅ Admin user ensured');
+            try {
+                await ensureSuperAdmin(); // 👑 Garante Admin ao iniciar
+                console.log('✅ Admin user ensured');
+            } catch (adminError) {
+                console.warn('⚠️ Admin setup failed (non-critical):', adminError);
+            }
             app.listen(PORT, '0.0.0.0', () => {
                 console.log(`🚀 Servidor CaféPoint rodando na porta ${PORT}`);
                 console.log(`📊 Ambiente: ${process.env.NODE_ENV}`);
