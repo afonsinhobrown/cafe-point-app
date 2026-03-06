@@ -1,0 +1,47 @@
+# Dependencies
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+**/.npm
+
+# Build outputs
+**/dist
+frontend/dist
+backend/dist
+
+# Development files
+**/.git
+**/.gitignore
+**/.env
+**/.env.local
+**/.vscode
+
+# Documentation
+**/*.md
+!README.md
+PRESENTATION_SCRIPT.md
+PROMPT_FOR_PPT_GENERATION.md
+MANUAL_*.md
+MULTI_TENANT_ROADMAP.md
+
+# Scripts and batch files
+**/*.bat
+**/*.sh
+!build_render.sh
+
+# Python and presentation files
+**/*.py
+**/*.html
+!public/**/*.html
+!backend/public/**/*.html
+
+# Other
+ngrok-v3-stable-windows-amd64/
+backend/uploads/
+backend/compile_*.txt
+backend/limit_log.txt
+**/*.log
+
+# Docker
+docker-compose.yml
+Dockerfile.old

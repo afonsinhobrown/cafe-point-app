@@ -22,4 +22,4 @@ RUN npm run build
 EXPOSE 5000
 
 # Start command
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/src/index.js"]
