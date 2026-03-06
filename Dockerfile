@@ -63,19 +63,21 @@ ENV NODE_ENV=production
 # Regenerate Prisma Client in production stage
 RUN npx prisma generate
 
-# Create startup script
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'echo "🚀 Starting CafePoint deployment..."' >> /app/start.sh && \
-    echo 'echo "📂 Current directory: $(pwd)"' >> /app/start.sh && \
-    echo 'echo "📁 Checking files..."' >> /app/start.sh && \
-    echo 'ls -la dist/ || echo "dist folder issue"' >> /app/start.sh && \
-    echo 'echo "🔧 Running Prisma migration..."' >> /app/start.sh && \
-    echo 'npx prisma db push --accept-data-loss || { echo "❌ Prisma migration failed"; exit 1; }' >> /app/start.sh && \
-    echo 'echo "🌱 Running seed..."' >> /app/start.sh && \
-    echo 'node dist/prisma/seed.js || echo "⚠️ Seed skipped or failed"' >> /app/start.sh && \
-    echo 'echo "🚀 Starting Node server..."' >> /app/start.sh && \
-    echo 'exec node dist/src/index.js' >> /app/start.sh && \
-    chmod +x /app/start.sh
+# Verify the build
+RUN echo "==> Verifying build..." && \
+    ls -la dist/ && \
+    test -f dist/src/index.js || (echo "ERROR: dist/src/index.js not found!" && exit 1) && \
+    echo "==> Build verified"
 
-# Start command
-CMD ["/app/start.sh"]
+# Start command - sequential with explicit error handling
+CMD ["/bin/sh", "-c", "\
+  echo '==> CafePoint Deployment Starting' && \
+  echo '==> DATABASE_URL:' $DATABASE_URL && \
+  echo '==> Pushing schema to database...' && \
+  npx prisma db push --accept-data-loss --skip-generate && \
+  echo '==> Schema pushed successfully' && \
+  echo '==> Running seed (optional)...' && \
+  (node dist/prisma/seed.js || echo '==> Seed skipped') && \
+  echo '==> Starting Node.js server...' && \
+  node dist/src/index.js \
+"]
