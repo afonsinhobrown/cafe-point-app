@@ -1,6 +1,9 @@
 # Multi-stage build for CafePoint Monolith
 FROM node:18-alpine AS builder
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy all package files
@@ -39,6 +42,9 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy built backend and node_modules
@@ -54,5 +60,22 @@ EXPOSE 5000
 # Set environment
 ENV NODE_ENV=production
 
-# Start command: push schema, seed database (if not already seeded), and start server
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && (node dist/prisma/seed.js || echo 'Seed skipped or already done') && node dist/src/index.js"]
+# Regenerate Prisma Client in production stage
+RUN npx prisma generate
+
+# Create startup script
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'echo "🚀 Starting CafePoint deployment..."' >> /app/start.sh && \
+    echo 'echo "📂 Current directory: $(pwd)"' >> /app/start.sh && \
+    echo 'echo "📁 Checking files..."' >> /app/start.sh && \
+    echo 'ls -la dist/ || echo "dist folder issue"' >> /app/start.sh && \
+    echo 'echo "🔧 Running Prisma migration..."' >> /app/start.sh && \
+    echo 'npx prisma db push --accept-data-loss || { echo "❌ Prisma migration failed"; exit 1; }' >> /app/start.sh && \
+    echo 'echo "🌱 Running seed..."' >> /app/start.sh && \
+    echo 'node dist/prisma/seed.js || echo "⚠️ Seed skipped or failed"' >> /app/start.sh && \
+    echo 'echo "🚀 Starting Node server..."' >> /app/start.sh && \
+    echo 'exec node dist/src/index.js' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Start command
+CMD ["/app/start.sh"]
