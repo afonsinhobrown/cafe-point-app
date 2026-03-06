@@ -31,9 +31,8 @@ MULTI_TENANT_ROADMAP.md
 
 # Python and presentation files
 **/*.py
-**/*.html
-!public/**/*.html
-!backend/public/**/*.html
+apresentacao*.html
+cafe_point_app.html
 
 # Other
 ngrok-v3-stable-windows-amd64/
