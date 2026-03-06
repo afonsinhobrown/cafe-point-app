@@ -108,11 +108,18 @@ app.use('/api', routes);
 setupSocket(io);
 
 // ✅ Servir Arquivos Estáticos do Frontend (Produção)
-// NOTA: O instalador copia o frontend para 'backend/dist/public'
-// Como este ficheiro compilado vive em 'backend/dist/src/app.js', subir um nível (../) leva a 'backend/dist'.
-// Portanto '../public' aponta corretamente para 'backend/dist/public'.
-const publicPath = path.join(__dirname, '../public');
-const uploadsPath = path.join(__dirname, '../uploads');
+// Resolve both layouts: dist/public (local build) and /app/public (Docker image copy).
+const publicCandidates = [
+    path.join(__dirname, '../public'),
+    path.join(process.cwd(), 'public')
+];
+const publicPath = publicCandidates.find((p) => fs.existsSync(p)) || publicCandidates[0];
+
+const uploadsCandidates = [
+    path.join(__dirname, '../uploads'),
+    path.join(process.cwd(), 'uploads')
+];
+const uploadsPath = uploadsCandidates.find((p) => fs.existsSync(p)) || uploadsCandidates[0];
 
 try {
     if (!fs.existsSync(uploadsPath)) {
@@ -123,7 +130,7 @@ try {
         console.log('📂 Static Path:', publicPath);
         app.use(express.static(publicPath));
     } else {
-        console.warn('⚠️ Public path not found:', publicPath);
+        console.warn('⚠️ Public path not found. Candidates:', publicCandidates);
     }
     app.use('/uploads', express.static(uploadsPath));
 } catch (error) {
