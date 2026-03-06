@@ -57,9 +57,14 @@ if (!license.valid) {
             });
         })
         .catch((error) => {
-            console.error('❌ Erro crítico ao iniciar servidor:');
+            console.error('❌ Falha ao conectar ou inicializar banco (modo degradado):');
             console.error('Error details:', error);
             console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
-            process.exit(1);
+
+            // Keep the process alive so Render can detect an open port.
+            app.listen(PORT, '0.0.0.0', () => {
+                console.log(`⚠️ Servidor iniciado em modo degradado na porta ${PORT}`);
+                console.log('⚠️ Algumas rotas podem falhar até o banco ficar disponível.');
+            });
         });
 }
