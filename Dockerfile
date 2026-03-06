@@ -54,5 +54,5 @@ EXPOSE 5000
 # Set environment
 ENV NODE_ENV=production
 
-# Start command: push schema and start server
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/src/index.js"]
+# Start command: push schema, seed database (if not already seeded), and start server
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && (node dist/prisma/seed.js || echo 'Seed skipped or already done') && node dist/src/index.js"]
