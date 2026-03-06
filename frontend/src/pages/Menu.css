@@ -1,121 +1,172 @@
+/* Menu Management - Premium Aesthetic */
 .menu-page {
-    padding: 32px;
+    padding: 40px;
+    background: var(--bg-main);
 }
 
 .menu-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
+    margin-bottom: 40px;
+}
+
+.menu-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -1px;
 }
 
 .menu-grid-admin {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 32px;
 }
 
 .menu-admin-card {
-    background: white;
-    padding: 24px;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 28px;
+    border-radius: var(--card-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     display: flex;
     justify-content: space-between;
-    transition: all 0.2s;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-admin-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
 }
 
 .menu-admin-card.unavailable {
-    opacity: 0.6;
-    background: #f8fafc;
-    border-style: dashed;
+    opacity: 0.5;
+    background: rgba(241, 245, 249, 0.5);
+    filter: grayscale(1);
 }
 
 .item-category-tag {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     text-transform: uppercase;
-    color: #4f46e5;
-    background: #eef2ff;
-    padding: 4px 8px;
-    border-radius: 6px;
+    color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
     display: inline-block;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
 }
 
 .item-details h3 {
     margin: 0 0 8px 0;
-    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
 }
 
 .item-details p {
-    font-size: 0.875rem;
-    color: #64748b;
-    margin-bottom: 12px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
 }
 
 .item-price-tag {
     font-weight: 800;
-    color: #1e293b;
-    font-size: 1.1rem;
+    color: var(--text-main);
+    font-size: 1.25rem;
+    background: var(--bg-main);
+    padding: 4px 12px;
+    border-radius: 8px;
+    display: inline-block;
 }
 
 .item-admin-actions {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .item-admin-actions button {
-    padding: 8px;
+    padding: 10px;
     background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-admin-actions button:hover {
+    background: var(--bg-main);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.1);
 }
 
 .item-admin-actions .delete-btn:hover {
     background: #fee2e2;
-    border-color: #fca5a5;
+    border-color: #ef4444;
+    color: #ef4444;
 }
 
-.item-admin-actions .edit-btn:hover {
-    background: #f1f5f9;
-}
-
+/* Modal Styling - Ultra Premium */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
     background: white;
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 600px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 100px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #475569;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: var(--text-main);
     font-size: 0.9rem;
 }
 
@@ -123,110 +174,115 @@
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    padding: 14px 18px;
+    border: 2px solid var(--bg-main);
+    border-radius: 14px;
     font-size: 1rem;
-    transition: all 0.2s;
-    background: white;
-    color: #1e293b;
+    transition: all 0.3s;
+    background: var(--bg-main);
+    color: var(--text-main);
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .modal-actions {
     display: flex;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.cancel-btn,
-.submit-btn {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+    gap: 16px;
+    margin-top: 32px;
 }
 
 .cancel-btn {
-    background: #f1f5f9;
-    color: #475569;
+    flex: 1;
+    padding: 14px;
+    background: var(--bg-main);
+    border: none;
+    border-radius: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
 }
 
-.admin-item-meta {
-    display: flex;
-    justify-content: space-between;
+.submit-btn {
+    flex: 2;
+    padding: 14px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+}
+
+/* Recipe & Ingredients Section */
+.recipe-section {
+    background: var(--bg-main);
+    padding: 24px;
+    border-radius: 18px;
+    border: 2px dashed var(--border-color);
+    margin-bottom: 24px;
+}
+
+.recipe-section h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.recipe-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 40px;
+    gap: 12px;
+    margin-bottom: 12px;
     align-items: center;
-    margin-top: 10px;
+}
+
+.add-ingredient-btn {
+    margin-top: 12px;
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.add-ingredient-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.tag-dish {
+    background: rgba(192, 38, 211, 0.1) !important;
+    color: #c026d3 !important;
 }
 
 .item-stock-tag {
     font-size: 0.75rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: #f1f5f9;
-    color: #475569;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--bg-main);
+    color: var(--text-muted);
 }
 
 .item-stock-tag.low-stock {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.input-group {
-    display: flex;
-    gap: 8px;
-}
-
-.input-group input {
-    flex: 1;
-}
-
-.submit-btn {
-    background: #4f46e5;
-    color: white;
-}
-
-.submit-btn:hover {
-    background: #4338ca;
-}
-
-.checkbox-group {
-    margin-top: 10px;
-}
-
-.checkbox-group label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    font-weight: 500;
-    color: #475569;
-}
-
-.checkbox-group input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.menu-modal textarea {
-    min-height: 120px;
-    resize: vertical;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
 }

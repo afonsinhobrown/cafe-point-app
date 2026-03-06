@@ -11,12 +11,16 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "types": [
+            "node"
+        ]
     },
     "include": [
         "src/**/*",
         "prisma/**/*",
-        "create_user.ts"
+        "scripts/**/*",
+        "*.ts"
     ],
     "exclude": [
         "node_modules",

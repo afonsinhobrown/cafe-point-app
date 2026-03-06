@@ -1,26 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { getOrderHistory } from '../services/api';
+import { getOrderHistory, getRestaurantSettings } from '../services/api';
+import PrintReceipt from '../components/PrintReceipt';
 import './Orders.css';
 
 const Orders: React.FC = () => {
     const [orders, setOrders] = useState<any[]>([]);
+    const [restaurant, setRestaurant] = useState<any>(null);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [printFormat, setPrintFormat] = useState<'THERMAL' | 'A4'>('THERMAL');
     const [isLoading, setIsLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('');
 
     useEffect(() => {
-        loadOrders();
+        loadData();
     }, [filterStatus]);
 
-    const loadOrders = async () => {
+    const loadData = async () => {
         try {
             setIsLoading(true);
-            const response = await getOrderHistory({ status: filterStatus });
-            setOrders(response.data.data);
+            const [ordersRes, settingsRes] = await Promise.all([
+                getOrderHistory({ status: filterStatus }),
+                getRestaurantSettings()
+            ]);
+            setOrders(ordersRes.data.data);
+            setRestaurant(settingsRes.data.data);
         } catch (error) {
-            console.error('Erro ao carregar pedidos:', error);
+            console.error('Erro ao carregar dados:', error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handlePrint = (order: any, format: 'THERMAL' | 'A4') => {
+        setPrintFormat(format);
+        setSelectedOrder(order);
+        // Pequeno delay para garantir que o componente renderizou com a nova ordem antes de abrir o print do browser
+        setTimeout(() => {
+            window.print();
+        }, 100);
     };
 
     const getStatusText = (status: string) => {
@@ -64,6 +81,7 @@ const Orders: React.FC = () => {
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>Horário</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -89,10 +107,37 @@ const Orders: React.FC = () => {
                                         </div>
                                     </td>
                                     <td>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td>
+                                        <div className="print-actions">
+                                            <button
+                                                className="print-btn thermal"
+                                                onClick={() => handlePrint(order, 'THERMAL')}
+                                                title="Imprimir Recibo Térmico"
+                                            >
+                                                🧾 Recibo
+                                            </button>
+                                            <button
+                                                className="print-btn a4"
+                                                onClick={() => handlePrint(order, 'A4')}
+                                                title="Imprimir Fatura A4"
+                                            >
+                                                📑 Fatura
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Componente Invisível que só aparece no window.print() */}
+                    {selectedOrder && restaurant && (
+                        <PrintReceipt
+                            order={selectedOrder}
+                            restaurant={restaurant}
+                            format={printFormat}
+                        />
+                    )}
 
                     {orders.length === 0 && (
                         <div className="no-orders">Nenhum pedido encontrado.</div>

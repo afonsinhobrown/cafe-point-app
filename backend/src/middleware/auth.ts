@@ -7,23 +7,12 @@ export interface AuthRequest extends Request {
         username: string;
         role: string;
         name: string;
+        restaurantId: number; // Campos SaaS obrigatórios
     };
 }
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-
-    // Dev bypass: permitir chamadas sem token em ambiente de desenvolvimento
-    const devBypass = process.env.NODE_ENV !== 'production' || process.env.SKIP_AUTH === 'true';
-    if (!token && devBypass) {
-        req.user = {
-            id: parseInt(process.env.DEV_USER_ID || '1'),
-            username: process.env.DEV_USER_EMAIL || 'admin',
-            role: (process.env.DEV_USER_ROLE || 'ADMIN'),
-            name: process.env.DEV_USER_NAME || 'Dev User'
-        };
-        return next();
-    }
 
     if (!token) {
         return res.status(401).json({
@@ -33,7 +22,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'cafe-point-offline-secret-key-2026') as any;
         req.user = decoded;
         next();
     } catch (error) {
@@ -47,11 +36,44 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 export const authenticateToken = authenticate;
 
 export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || req.user.role !== 'ADMIN') {
+    if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN')) {
         return res.status(403).json({
             success: false,
             message: 'Acesso negado. Requer privilégios de administrador.'
         });
     }
     next();
+};
+
+export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || req.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({
+            success: false,
+            message: 'Acesso negado. Área restrita ao Administrador da Plataforma.'
+        });
+    }
+    next();
+};
+
+export const isRegistrar = (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || (req.user.role !== 'REGISTRAR' && req.user.role !== 'SUPER_ADMIN')) {
+        return res.status(403).json({
+            success: false,
+            message: 'Acesso negado. Requer conta de Registro (Staff).'
+        });
+    }
+    next();
+};
+
+// Middleware para múltiplos papéis
+export const allowRoles = (roles: string[]) => {
+    return (req: AuthRequest, res: Response, next: NextFunction) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: `Acesso negado. Requer um dos seguintes papéis: ${roles.join(', ')}`
+            });
+        }
+        next();
+    };
 };

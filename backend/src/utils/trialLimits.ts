@@ -1,38 +1,40 @@
-import { Request } from 'express';
 import prisma from '../config/database';
 
-export const checkTrialLimit = async (modelName: 'table' | 'location' | 'order' | 'menuItem' | 'stockMovement', userId: number) => {
-    // Buscar usuário para ver se é trial
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.username !== 'trial') return;
+export const checkTrialLimit = async (modelName: 'table' | 'location' | 'order' | 'menuItem' | 'stockMovement', restaurantId: number) => {
+    // Buscar Licença Ativa com Plano
+    const license = await prisma.license.findUnique({
+        where: { restaurantId },
+        include: { plan: true }
+    });
 
-    let count = 0;
-
-    // Regras de Contagem
-    // Para itens estruturais (Mesas, Áreas, Produtos), contamos o total do sistema
-    // Para itens transacionais (Pedidos, Estoque), contamos apenas os do usuário (se possível) ou total
-
-    switch (modelName) {
-        case 'order':
-            // Pedidos: Limite por usuário trial
-            count = await prisma.order.count({ where: { userId } });
-            break;
-        case 'stockMovement':
-            // Movimentos: Limite por usuário trial
-            count = await prisma.stockMovement.count({ where: { userId } });
-            break;
-        case 'table':
-            count = await prisma.table.count();
-            break;
-        case 'location':
-            count = await prisma.location.count();
-            break;
-        case 'menuItem':
-            count = await prisma.menuItem.count();
-            break;
+    if (!license || license.status !== 'ACTIVE') {
+        const hasAnyLicense = await prisma.license.findFirst({ where: { restaurantId } });
+        if (!hasAnyLicense) return; // Permite (backwards compatibility) ou bloqueia? Melhor bloquear se for SaaS estrito.
+        // Se tem licença mas não tiva, erro.
+        throw new Error('Licença inativa ou expirada. Contate o suporte.');
     }
 
-    if (count >= 10) {
-        throw new Error('Limite da Versão Trial atingido (Máx. 10 registros). Entre em contato para Upgrade.');
+    const limits = license.plan;
+    let count = 0;
+
+    // TODO: Adicionar campos de limite no Model Plan se não exisitirem (Criamos maxTables, maxItems, maxUsers).
+    // Pedidos e StockMovement geralmente não têm limite numérico hardcoded no plano (talvez limite mensal, complexo).
+
+    switch (modelName) {
+        case 'table':
+            count = await prisma.table.count({ where: { restaurantId } });
+            if (count >= limits.maxTables) {
+                throw new Error(`Limite do plano atingido: Máximo ${limits.maxTables} mesas.`);
+            }
+            break;
+
+        case 'menuItem':
+            count = await prisma.menuItem.count({ where: { restaurantId } });
+            if (count >= limits.maxItems) {
+                throw new Error(`Limite do plano atingido: Máximo ${limits.maxItems} itens no menu.`);
+            }
+            break;
+
+        // Adicionar outros casos conforme schema Plan
     }
 };

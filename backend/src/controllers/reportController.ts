@@ -1,10 +1,18 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from 'date-fns';
+import { AuthRequest } from '../middleware/auth';
 
-export const getBillingStats = async (req: Request, res: Response) => {
+export const getBillingStats = async (req: AuthRequest, res: Response) => {
     try {
         const { period } = req.query; // 'day', 'week', 'month', 'year'
+        const restaurantId = req.user?.restaurantId;
+
+        if (!restaurantId) return res.status(401).json({ success: false, message: 'Acesso negado' });
+
+        // Tenant Filter Base
+        const tenantFilter = { restaurantId };
+
         let startDate: Date;
         let endDate: Date;
 
@@ -28,24 +36,26 @@ export const getBillingStats = async (req: Request, res: Response) => {
                 endDate = endOfDay(now);
         }
 
-        const timeRange = {
+        // TODO: Reativar filtro de data quando estável
+        /* const timeRange = {
             createdAt: {
                 gte: startDate,
                 lte: endDate
             }
-        };
+        }; */
 
-        console.log(`Buscando (Modo Manual) para período: ${period}`);
+        console.log(`Buscando estatísticas (SaaS Manual) para tenant ${restaurantId} - período: ${period}`);
 
-        // 🛑 MODO MANUAL: Busca tudo e soma no JS
+        // 🛑 MODO MANUAL COM TENANT ISOLATION
         const allStatsOrders = await prisma.order.findMany({
             where: {
+                ...tenantFilter,
                 status: { not: 'CANCELLED' }
                 // Sem filtro de data temporariamente
             }
         });
 
-        const REVENUE_STATUSES = ['PAID']; // SERVED (Entregue) ainda é pendente de pagamento
+        const REVENUE_STATUSES = ['PAID']; // SERVED ainda é pendente de pagamento
 
         let totalRevenue = 0;
         let paidCount = 0;
@@ -58,29 +68,24 @@ export const getBillingStats = async (req: Request, res: Response) => {
                 totalRevenue += val;
                 paidCount++;
             } else {
-                // Se não está PAGO, mas também não CANCELADO, é Pendente (Inclui SERVED, READY, ETC)
                 pendingRevenue += val;
                 pendingCount++;
             }
         });
 
-        console.log('Resumo Calculado (Manual):', { totalRevenue, pendingRevenue });
-
-        // Vendas por categoria (Query DEBUG - SEM DATA)
+        // Vendas por categoria (Query DEBUG - SEM DATA - TENANT ISOLATED)
         const paidOrders = await prisma.order.findMany({
             where: {
-                // Incluimos SERVED aqui para o gráfico de categorias mostrar o que saiu
+                ...tenantFilter,
                 OR: [
                     { status: 'PAID' },
                     { status: 'SERVED' }
                 ],
-                // ...timeRange // 🛑 FILTRO DE DATA DESATIVADO PARA DEBUG
+                // ...timeRange 
             },
             include: {
                 orderItems: {
-                    include: {
-                        menuItem: true
-                    }
+                    include: { menuItem: true }
                 }
             }
         });
@@ -97,38 +102,32 @@ export const getBillingStats = async (req: Request, res: Response) => {
 
                 salesByCategory[cat] = (salesByCategory[cat] || 0) + revenue;
                 costByCategory[cat] = (costByCategory[cat] || 0) + cost;
-
-                // Custo só conta se o pedido foi servido/pago (produto saiu do estoque)
                 totalCost += cost;
             });
         });
 
         const grossProfit = totalRevenue - totalCost;
+        // Margem de lucro baseada em receita PAGA
         const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-        // 🛑 DEBUG: REATIVANDO Compras mas SEM DATA
-        // Calcular total de compras (investimento em stock)
+        // Compras (Investimento stock)
         const purchasesWithSupplier = await prisma.stockMovement.findMany({
             where: {
-                // ...timeRange, // Sem data tb em compras
+                ...tenantFilter,
                 type: 'ENTRY'
+                // ...timeRange
             },
             include: { supplier: true }
         });
 
         const totalPurchases = purchasesWithSupplier.reduce((acc, m) => acc + (Math.abs(m.quantity) * (m.purchasePrice || 0)), 0);
 
-        // Calcular compras por fornecedor para balanço profissional
         const purchasesBySupplier: { [key: string]: number } = {};
         purchasesWithSupplier.forEach(m => {
             const sName = m.supplier?.name || 'Sem Fornecedor';
             const value = Math.abs(m.quantity) * (m.purchasePrice || 0);
             purchasesBySupplier[sName] = (purchasesBySupplier[sName] || 0) + value;
         });
-
-        // Mock values para evitar erro no frontend (REMOVIDO MOCK)
-        // const totalPurchases = 0;
-        // const purchasesBySupplier = {};
 
         res.json({
             success: true,
@@ -137,7 +136,7 @@ export const getBillingStats = async (req: Request, res: Response) => {
                 totalCost: Number(totalCost),
                 totalPurchases: Number(totalPurchases),
                 grossProfit: Number(grossProfit),
-                profitMargin: totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0,
+                profitMargin,
                 orderCount: paidOrders.length,
                 pendingRevenue: Number(pendingRevenue),
                 pendingCount: Number(pendingCount),
@@ -156,11 +155,14 @@ export const getBillingStats = async (req: Request, res: Response) => {
     }
 };
 
-export const getOrderHistory = async (req: Request, res: Response) => {
+export const getOrderHistory = async (req: AuthRequest, res: Response) => {
     try {
         const { status, startDate, endDate } = req.query;
+        const restaurantId = req.user?.restaurantId;
 
-        const where: any = {};
+        if (!restaurantId) return res.status(401).json({ success: false, message: 'Acesso negado' });
+
+        const where: any = { restaurantId };
         if (status) where.status = status;
         if (startDate || endDate) {
             where.createdAt = {};
@@ -171,26 +173,17 @@ export const getOrderHistory = async (req: Request, res: Response) => {
         const orders = await prisma.order.findMany({
             where,
             include: {
-                table: {
-                    include: { location: true }
-                },
+                table: { include: { location: true } },
                 user: { select: { name: true } },
-                orderItems: {
-                    include: { menuItem: true }
-                }
+                orderItems: { include: { menuItem: true } }
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            take: 500 // Limit history safety
         });
 
-        res.json({
-            success: true,
-            data: orders
-        });
+        res.json({ success: true, data: orders });
     } catch (error) {
         console.error('Erro ao buscar histórico de pedidos:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro interno do servidor'
-        });
+        res.status(500).json({ success: false, message: 'Erro interno do servidor' });
     }
 };

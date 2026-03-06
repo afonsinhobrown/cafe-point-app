@@ -159,6 +159,14 @@
 .cart-item-info h4 {
     margin: 0;
     font-size: 14px;
+    color: #333;
+    font-weight: 600;
+}
+
+.cart-item-info .item-price {
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 14px;
 }
 
 .quantity-controls {

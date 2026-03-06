@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { checkTrialLimit } from '../utils/trialLimits';
+import { AuthRequest } from '../middleware/auth';
 
 export const getLocations = async (req: Request, res: Response) => {
     try {
+        const user = (req as any).user;
+        const tenantFilter = user?.restaurantId ? { restaurantId: user.restaurantId } : {};
+
         const locations = await prisma.location.findMany({
+            where: tenantFilter,
             orderBy: { name: 'asc' }
         });
         res.json({
@@ -23,6 +28,10 @@ export const getLocations = async (req: Request, res: Response) => {
 export const createLocation = async (req: Request, res: Response) => {
     try {
         const { name, description } = req.body;
+        const user = (req as any).user;
+        const restaurantId = user.restaurantId;
+
+        if (!restaurantId) return res.status(403).json({ success: false, message: 'Restaurante não identificado' });
 
         if (!name) {
             return res.status(400).json({
@@ -31,8 +40,8 @@ export const createLocation = async (req: Request, res: Response) => {
             });
         }
 
-        const existing = await prisma.location.findUnique({
-            where: { name }
+        const existing = await prisma.location.findFirst({
+            where: { name, restaurantId } // Check duplicidade Por Tenant
         });
 
         if (existing) {
@@ -42,13 +51,15 @@ export const createLocation = async (req: Request, res: Response) => {
             });
         }
 
-        const userId = (req as any).user?.id;
-        if (userId) {
-            await checkTrialLimit('location', userId);
-        }
+        // Verificar limite trial
+        await checkTrialLimit('location', restaurantId);
 
         const location = await prisma.location.create({
-            data: { name, description }
+            data: {
+                name,
+                description,
+                restaurantId
+            }
         });
 
         res.status(201).json({
@@ -59,7 +70,7 @@ export const createLocation = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Erro ao criar localização:', error);
         const message = error instanceof Error ? error.message : 'Erro interno do servidor';
-        const statusCode = message.includes('Trial') ? 403 : 500;
+        const statusCode = message.includes('Limite') ? 403 : 500;
 
         res.status(statusCode).json({
             success: false,
@@ -72,6 +83,14 @@ export const updateLocation = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { name, description } = req.body;
+        const user = (req as any).user;
+
+        // Ensure ownership
+        const existing = await prisma.location.findFirst({
+            where: { id: parseInt(id), restaurantId: user.restaurantId }
+        });
+
+        if (!existing) return res.status(404).json({ success: false, message: 'Localização não encontrada' });
 
         const location = await prisma.location.update({
             where: { id: parseInt(id) },
@@ -95,10 +114,18 @@ export const updateLocation = async (req: Request, res: Response) => {
 export const deleteLocation = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const user = (req as any).user;
+
+        // Ensure ownership
+        const existing = await prisma.location.findFirst({
+            where: { id: parseInt(id), restaurantId: user.restaurantId }
+        });
+
+        if (!existing) return res.status(404).json({ success: false, message: 'Localização não encontrada' });
 
         // Verificar se existem mesas nesta localização
         const tablesCount = await prisma.table.count({
-            where: { locationId: parseInt(id) }
+            where: { locationId: parseInt(id) } // Mesas do mesmo tenant, assumido pelo FK constraint
         });
 
         if (tablesCount > 0) {

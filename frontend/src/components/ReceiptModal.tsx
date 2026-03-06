@@ -1,4 +1,6 @@
 import React from 'react';
+import { getRestaurantSettings } from '../services/api';
+import PrintReceipt from './PrintReceipt';
 import './ReceiptModal.css';
 
 interface ReceiptModalProps {
@@ -8,6 +10,23 @@ interface ReceiptModalProps {
 }
 
 const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, order }) => {
+    const [restaurant, setRestaurant] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            fetchSettings();
+        }
+    }, [isOpen]);
+
+    const fetchSettings = async () => {
+        try {
+            const res = await getRestaurantSettings();
+            setRestaurant(res.data.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     if (!isOpen || !order) return null;
 
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CAFEPONT-ORDER-${order.id}-TOTAL-${order.totalAmount}`;
@@ -57,8 +76,17 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, order }) =
 
                 <div className="receipt-footer">
                     <p>Obrigado pela preferência!</p>
-                    <p>Volte sempre ao CaféPoint</p>
+                    <p>Volte sempre ao {restaurant?.name || 'CaféPoint'}</p>
                 </div>
+
+                {/* Camada oculta para impressão real (usando o componente padronizado) */}
+                {restaurant && (
+                    <PrintReceipt
+                        order={order}
+                        restaurant={restaurant}
+                        format={restaurant.receiptPreference || 'THERMAL'}
+                    />
+                )}
 
                 <div className="receipt-actions no-print">
                     <button className="print-btn" onClick={handlePrint}>🖨️ Imprimir Recibo</button>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getStats, getOrderHistory, updateOrderStatus, getMenu } from '../services/api';
+import { getStats, getOrderHistory, updateOrderStatus, getMenu, api } from '../services/api';
+import { generateFinancialReport, generateInventoryReport } from '../services/reportService';
 import ReceiptModal from '../components/ReceiptModal';
+import ExpenseModal, { ExpenseFormData } from '../components/ExpenseModal';
 import './Reports.css';
 
 const Reports: React.FC = () => {
@@ -19,8 +21,15 @@ const Reports: React.FC = () => {
         purchasesBySupplier: {}
     });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
+    const [expenses, setExpenses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Estados separados para cada relatório
+    const [isGeneratingFinancial, setIsGeneratingFinancial] = useState(false);
+    const [isGeneratingInventory, setIsGeneratingInventory] = useState(false);
+
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [lowStockItems, setLowStockItems] = useState<any[]>([]);
 
@@ -49,10 +58,55 @@ const Reports: React.FC = () => {
                 item.stockQuantity !== null && item.stockQuantity <= (item.minStock || 5)
             );
             setLowStockItems(lowStock);
+
+            // Fetch Expenses
+            const expensesRes = await api.get('/expenses');
+            setExpenses(expensesRes.data.data);
         } catch (error) {
             console.error('Erro ao carregar relatórios:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleDownloadFinancialReport = async () => {
+        try {
+            setIsGeneratingFinancial(true);
+            // Definir datas baseadas no período
+            const now = new Date();
+            let start = new Date();
+
+            // Ajustar datas corretamente
+            if (period === 'day') start.setHours(0, 0, 0, 0);
+            if (period === 'week') {
+                const day = start.getDay();
+                const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+                start.setDate(diff);
+            }
+            if (period === 'month') start.setDate(1);
+            if (period === 'year') start.setMonth(0, 1);
+
+            await generateFinancialReport(
+                start.toISOString().split('T')[0],
+                now.toISOString().split('T')[0]
+            );
+        } catch (err: any) {
+            console.error(err);
+            alert('Erro ao gerar PDF: ' + (err.message || 'Verifique a consola'));
+        } finally {
+            setIsGeneratingFinancial(false);
+        }
+    };
+
+    const handleDownloadInventory = async () => {
+        try {
+            setIsGeneratingInventory(true);
+            await generateInventoryReport();
+        } catch (err: any) {
+            console.error(err);
+            alert('Erro ao gerar PDF: ' + (err.message || 'Verifique a consola'));
+        } finally {
+            setIsGeneratingInventory(false);
         }
     };
 
@@ -78,10 +132,6 @@ const Reports: React.FC = () => {
         setIsReceiptOpen(true);
     };
 
-    const handlePrintReport = () => {
-        window.print();
-    };
-
     const getStatusText = (status: string) => {
         const statuses: any = {
             'PENDING': 'Pendente',
@@ -94,16 +144,57 @@ const Reports: React.FC = () => {
         return statuses[status] || status;
     };
 
+    const handleCreateExpense = async (data: ExpenseFormData) => {
+        try {
+            await api.post('/expenses', data);
+            setIsExpenseModalOpen(false);
+            await loadData(); // Recarregar dados
+        } catch (error) {
+            console.error('Erro ao criar despesa:', error);
+            alert('Erro ao registar despesa');
+        }
+    };
+
+    const handleDeleteExpense = async (id: number) => {
+        if (!window.confirm('Tem certeza que deseja remover esta despesa?')) return;
+
+        try {
+            await api.delete(`/expenses/${id}`);
+            await loadData();
+        } catch (error) {
+            console.error('Erro ao remover despesa:', error);
+            alert('Erro ao remover despesa');
+        }
+    };
+
     if (isLoading && !stats?.totalRevenue && stats?.totalRevenue !== 0) return <div className="reports-page">Carregando...</div>;
 
     return (
         <div className="reports-page printable-report">
             <header className="reports-header no-print">
-                <h1>📊 Financeiro</h1>
+                <div className="title-area">
+                    <h1>📊 Gestão Financeira</h1>
+                    <p className="subtitle">Visão 360º de Ganhos, Custos e Despesas</p>
+                </div>
+
                 <div className="header-actions">
-                    <button className="print-report-btn" onClick={handlePrintReport}>
-                        🖨️ Imprimir Relatório
-                    </button>
+                    <div className="download-actions">
+                        <button
+                            className="btn-pdf-financial"
+                            onClick={handleDownloadFinancialReport}
+                            disabled={isGeneratingFinancial}
+                        >
+                            {isGeneratingFinancial ? '⏳ Gerando...' : '📥 Relatório Financeiro (PDF)'}
+                        </button>
+                        <button
+                            className="btn-pdf-inventory"
+                            onClick={handleDownloadInventory}
+                            disabled={isGeneratingInventory}
+                        >
+                            {isGeneratingInventory ? '⏳ Gerando...' : '📥 Inventário (PDF)'}
+                        </button>
+                    </div>
+
                     <div className="period-selector">
                         {periods.map(p => (
                             <button
@@ -198,7 +289,7 @@ const Reports: React.FC = () => {
                                     <div className="cat-bar-bg">
                                         <div
                                             className="cat-bar"
-                                            style={{ width: `${stats.totalRevenue > 0 ? (val / stats.totalRevenue) * 100 : 0}%` }}
+                                            style={{ width: `${stats.totalRevenue > 0 ? (val / stats.totalRevenue) * 100 : 0}% ` }}
                                         ></div>
                                     </div>
                                 </div>
@@ -284,12 +375,68 @@ const Reports: React.FC = () => {
                         </table>
                     </div>
                 </div>
+
+                <div className="expenses-section recent-orders-section" style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3>💸 Despesas Adicionais (Fixas e Variáveis)</h3>
+                        <button className="add-expense-btn" onClick={() => setIsExpenseModalOpen(true)}>
+                            ➕ Registrar Despesa
+                        </button>
+                    </div>
+                    <div className="table-responsive" style={{ marginTop: '16px' }}>
+                        <table className="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Forma Pag.</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {expenses.map(exp => (
+                                    <tr key={exp.id}>
+                                        <td>{new Date(exp.date).toLocaleDateString()}</td>
+                                        <td><strong>{exp.description}</strong></td>
+                                        <td><span className="cat-badge">{exp.category}</span></td>
+                                        <td>{exp.paymentMethod || '---'}</td>
+                                        <td style={{ color: '#dc2626', fontWeight: 'bold' }}>- MT {exp.amount.toFixed(2)}</td>
+                                        <td>
+                                            <span className={`status-badge ${exp.isPaid ? 'paid' : 'pending'}`}>
+                                                {exp.isPaid ? 'Pago' : 'Pendente'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button className="delete-btn-small" onClick={() => handleDeleteExpense(exp.id)}>🗑️</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {expenses.length === 0 && (
+                                    <tr>
+                                        <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
+                                            Nenhuma despesa extra registada.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <ReceiptModal
                 isOpen={isReceiptOpen}
                 onClose={() => setIsReceiptOpen(false)}
                 order={selectedOrder}
+            />
+
+            <ExpenseModal
+                isOpen={isExpenseModalOpen}
+                onClose={() => setIsExpenseModalOpen(false)}
+                onSubmit={handleCreateExpense}
             />
         </div>
     );

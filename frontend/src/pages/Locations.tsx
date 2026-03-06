@@ -40,20 +40,31 @@ const Locations: React.FC = () => {
         setFormData({ name: '', description: '' });
     };
 
+    const [successMessage, setSuccessMessage] = useState('');
+    const [error, setError] = useState('');
+
+    const showSuccess = (msg: string) => {
+        setSuccessMessage(msg);
+        setTimeout(() => setSuccessMessage(''), 3000);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         try {
             setIsLoading(true);
             if (editingLocation) {
                 await updateLocation(editingLocation.id, formData);
+                showSuccess('✅ Área atualizada com sucesso!');
             } else {
                 await createLocation(formData);
+                showSuccess('✅ Área criada com sucesso!');
             }
             fetchLocations();
             handleCloseModal();
-        } catch (error: any) {
-            console.error('Erro ao salvar localização:', error);
-            alert(error.response?.data?.message || 'Erro ao salvar localização');
+        } catch (err: any) {
+            console.error('Erro ao salvar localização:', err);
+            setError(err.response?.data?.message || 'Erro ao salvar localização');
         } finally {
             setIsLoading(false);
         }
@@ -61,12 +72,14 @@ const Locations: React.FC = () => {
 
     const handleDelete = async (id: number) => {
         if (window.confirm('Tem certeza que deseja excluir esta área?')) {
+            setError('');
             try {
                 await deleteLocation(id);
+                showSuccess('🗑️ Área removida com sucesso!');
                 fetchLocations();
-            } catch (error: any) {
-                console.error('Erro ao excluir localização:', error);
-                alert(error.response?.data?.message || 'Erro ao excluir localização');
+            } catch (err: any) {
+                console.error('Erro ao excluir localização:', err);
+                setError(err.response?.data?.message || 'Erro ao excluir localização');
             }
         }
     };
@@ -82,6 +95,9 @@ const Locations: React.FC = () => {
                     ➕ Nova Área
                 </button>
             </header>
+
+            {successMessage && <div className="success-message">{successMessage}</div>}
+            {error && <div className="error-message">⚠️ {error}</div>}
 
             <div className="locations-grid">
                 {locations.map(loc => (

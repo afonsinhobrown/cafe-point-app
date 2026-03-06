@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Table } from '../types';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import TableModal, { TableFormData } from '../components/TableModal';
 import OrderModal from '../components/OrderModal';
 import './Tables.css';
 
 const Tables: React.FC = () => {
+    const { user } = useAuth();
     const [tables, setTables] = useState<Table[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -44,9 +46,8 @@ const Tables: React.FC = () => {
             showSuccess('✅ Mesa criada com sucesso!');
             setIsModalOpen(false);
             loadTables();
-        } catch (error: any) {
-            const message = error.response?.data?.message || 'Erro ao criar mesa';
-            alert(`❌ ${message}`);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Erro ao criar mesa');
         }
     };
 
@@ -57,9 +58,8 @@ const Tables: React.FC = () => {
             setIsModalOpen(false);
             setEditingTable(null);
             loadTables();
-        } catch (error: any) {
-            const message = error.response?.data?.message || 'Erro ao atualizar mesa';
-            alert(`❌ ${message}`);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Erro ao atualizar mesa');
         }
     };
 
@@ -72,9 +72,8 @@ const Tables: React.FC = () => {
             await api.delete(`/tables/${id}`);
             showSuccess('✅ Mesa deletada com sucesso!');
             loadTables();
-        } catch (error: any) {
-            const message = error.response?.data?.message || 'Erro ao deletar mesa';
-            alert(`❌ ${message}`);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Erro ao deletar mesa');
         }
     };
 
@@ -151,9 +150,11 @@ const Tables: React.FC = () => {
                     <button onClick={loadTables} className="refresh-button">
                         🔄 Atualizar
                     </button>
-                    <button onClick={openCreateModal} className="create-button">
-                        ➕ Nova Mesa
-                    </button>
+                    {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                        <button onClick={openCreateModal} className="create-button">
+                            ➕ Nova Mesa
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -177,28 +178,30 @@ const Tables: React.FC = () => {
                     >
                         <div className="table-header">
                             <div className="table-number">Mesa {table.number}</div>
-                            <div className="table-actions">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        openEditModal(table);
-                                    }}
-                                    className="edit-btn"
-                                    title="Editar"
-                                >
-                                    ✏️
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteTable(table.id);
-                                    }}
-                                    className="delete-btn"
-                                    title="Deletar"
-                                >
-                                    🗑️
-                                </button>
-                            </div>
+                            {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+                                <div className="table-actions">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openEditModal(table);
+                                        }}
+                                        className="edit-btn"
+                                        title="Editar"
+                                    >
+                                        ✏️
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteTable(table.id);
+                                        }}
+                                        className="delete-btn"
+                                        title="Deletar"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         <div className="table-info" onClick={() => handleTableClick(table)}>
                             <div className="table-capacity">💺 {table.capacity} lugares</div>
@@ -215,10 +218,16 @@ const Tables: React.FC = () => {
             {tables.length === 0 && !isLoading && (
                 <div className="empty-state">
                     <h3>📭 Nenhuma mesa encontrada</h3>
-                    <p>Comece criando sua primeira mesa</p>
-                    <button onClick={openCreateModal} className="create-button-large">
-                        ➕ Criar Primeira Mesa
-                    </button>
+                    {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') ? (
+                        <>
+                            <p>Comece criando sua primeira mesa</p>
+                            <button onClick={openCreateModal} className="create-button-large">
+                                ➕ Criar Primeira Mesa
+                            </button>
+                        </>
+                    ) : (
+                        <p>Aguarde o administrador configurar as mesas.</p>
+                    )}
                 </div>
             )}
 

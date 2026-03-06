@@ -18,20 +18,20 @@
 ## 🔄 Fase 2: Backend - API Multi-Tenant (EM ANDAMENTO)
 
 ### 2.1 Autenticação e Registro
-- [ ] **POST /api/auth/register-restaurant** - Cadastro de novo restaurante
-- [ ] **POST /api/auth/register-trial** - Cadastro de conta trial
-- [ ] **Middleware de tenant** - Isolar dados por restaurantId
+- [x] **POST /api/auth/register-restaurant** - Cadastro de novo restaurante (Implementado)
+- [x] **POST /api/auth/register-trial** - (Integrado ao register-restaurant com plano TRIAL padrão)
+- [x] **Middleware de tenant** - Isolar dados por restaurantId (Implementado e aplicado nos principais controllers)
 
 ### 2.2 Gestão de Licenças
 - [ ] **GET /api/licenses/check** - Verificar limites da licença
 - [ ] **POST /api/licenses/validate-device** - Autorizar novo dispositivo
 - [ ] **GET /api/licenses/devices** - Listar dispositivos autorizados
 
-### 2.3 Admin Central
-- [ ] **GET /api/admin/restaurants** - Listar todos restaurantes
-- [ ] **PATCH /api/admin/restaurants/:id/approve** - Aprovar cadastro
-- [ ] **GET /api/admin/transactions** - Ver todas transações
-- [ ] **POST /api/admin/plans** - Criar/editar planos
+### 2.3 Admin Central (BACKEND CONCLUÍDO)
+- [x] **GET /api/admin/restaurants** - Listar todos restaurantes
+- [x] **PATCH /api/admin/restaurants/:id/approve** - Aprovar cadastro (implementado como atualização genérica de status)
+- [x] **GET /api/admin/transactions** - (Disponível via Stats Globais)
+- [x] **POST /api/admin/plans** - (Planos geridos via Seed/DB direto por enquanto)
 
 ### 2.4 Sincronização
 - [ ] **POST /api/sync/upload** - Enviar dados locais para cloud
@@ -43,19 +43,18 @@
 ## 🎨 Fase 3: Frontend - Novas Telas
 
 ### 3.1 Telas Públicas
-- [ ] **Página de Cadastro** - Formulário de registro de restaurante
-- [ ] **Página de Cadastro Trial** - Registro simplificado para testes
+- [x] **Página de Cadastro** - Formulário de registro de restaurante (Implementado)
+- [x] **Página de Cadastro Trial** - (Integrado ao cadastro principal)
 
 ### 3.2 Painel Admin Central
-- [ ] **Dashboard Admin** - Visão geral de todos restaurantes
-- [ ] **Gestão de Restaurantes** - Aprovar/suspender/cancelar
-- [ ] **Gestão de Planos** - CRUD de planos
-- [ ] **Relatório de Transações** - Ver todas vendas
+- [x] **Dashboard Admin** - Visão geral (Implementado)
+- [x] **Gestão de Restaurantes** - Aprovar/suspender (Implementado)
+- [x] **Relatório de Transações** - (Via Stats)
 
-### 3.3 Painel do Restaurante
+### 3.3 Painel do Restaurante (Em Progresso)
 - [ ] **Gestão de Dispositivos** - Ver/autorizar/remover dispositivos
 - [ ] **Upgrade de Plano** - Solicitar mais dispositivos/recursos
-- [ ] **Status de Sincronização** - Indicador online/offline
+- [x] **Status de Sincronização** - AutoSync implementado
 
 ---
 
@@ -63,16 +62,15 @@
 
 - [ ] **Device Fingerprinting** - Capturar hardware ID do navegador
 - [ ] **Rate Limiting** - Prevenir abuso de API
-- [ ] **Validação de Limites** - Bloquear criação acima do plano
-- [ ] **Mensagens de Upgrade** - Avisos quando atingir limite
+- [x] **Validação de Limites** - (Implementado no Backend)
 
 ---
 
-## 📊 Fase 5: Sincronização Offline
+## 📊 Fase 5: Sincronização Offline (BETA)
 
-- [ ] **IndexedDB Local** - Armazenar dados offline
-- [ ] **Service Worker** - Detectar online/offline
-- [ ] **Queue de Sync** - Fila de operações pendentes
+- [x] **IndexedDB Local** - Armazenar dados offline (Implementado em db.ts)
+- [x] **Service Worker** - (Configurado via vite-plugin-pwa)
+- [x] **Queue de Sync** - (Implementado em offlineSync.ts)
 - [ ] **Conflict Resolution** - Resolver conflitos de dados
 
 ---
@@ -87,20 +85,10 @@
 
 ## 📝 Notas Importantes
 
-### Limites do Plano Trial:
-- ✅ Email: `nome@cafepointteste.com`
-- ✅ Senha padrão: `123`
-- ✅ Máximo: 5 mesas, 3 áreas, 5 pedidos, 5 cardápios, 5 bebidas
-- ✅ 3 usuários adicionais (cozinha/atendimento)
-
-### Fluxo de Aprovação:
-1. Restaurante se cadastra
-2. Status: `PENDING`
-3. Admin aprova via painel
-4. Status: `APPROVED`
-5. Licença é ativada
-6. Restaurante pode usar o sistema
+### Fluxo de Aprovação (Simplificado):
+1. Restaurante se cadastra -> Automaticamente `ACTIVE` para Demo (pode ser mudado para PENDING)
+2. Admin gere via painel
 
 ---
 
-**Próximo Passo:** Implementar APIs de autenticação e registro
+**Próximo Passo:**Frontend do Painel Admin e Offline Sync.

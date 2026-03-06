@@ -1,0 +1,170 @@
+/* Base styles for printing */
+#printable-receipt {
+    display: none;
+    color: black;
+    background: white;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #printable-receipt,
+    #printable-receipt * {
+        visibility: visible;
+        display: block !important;
+    }
+
+    #printable-receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block;
+    }
+
+    @page {
+        margin: 0;
+    }
+}
+
+/* Thermal Receipt Format (58mm/80mm) */
+.thermal-receipt {
+    width: 300px;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.thermal-receipt .receipt-logo {
+    max-width: 80px;
+    display: block;
+    margin: 0 auto 10px;
+}
+
+.thermal-receipt h2 {
+    font-size: 18px;
+    text-align: center;
+    margin: 0 0 5px;
+}
+
+.thermal-receipt .restaurant-details {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.thermal-receipt .receipt-items {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.thermal-receipt th {
+    border-bottom: 1px dashed #000;
+    text-align: left;
+}
+
+.thermal-receipt td {
+    padding: 5px 0;
+}
+
+.thermal-receipt .receipt-totals {
+    border-top: 1px dashed #000;
+    padding-top: 10px;
+}
+
+.thermal-receipt .total-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.thermal-receipt .grand-total {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-top: 5px;
+}
+
+/* A4 Invoice Format */
+.a4-invoice {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm;
+    margin: 0 auto;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 12pt;
+}
+
+.a4-invoice .receipt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #333;
+    padding-bottom: 20px;
+}
+
+.a4-invoice .receipt-logo {
+    max-width: 150px;
+}
+
+.a4-invoice .receipt-info {
+    margin: 30px 0;
+}
+
+.a4-invoice h3 {
+    font-size: 24pt;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.a4-invoice .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.a4-invoice .receipt-items {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 40px 0;
+}
+
+.a4-invoice th {
+    background: #f4f4f4;
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.a4-invoice td {
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+
+.a4-invoice .receipt-totals {
+    width: 300px;
+    margin-left: auto;
+}
+
+.a4-invoice .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.a4-invoice .grand-total {
+    border-top: 2px solid #333;
+    padding-top: 15px;
+    font-size: 16pt;
+    font-weight: bold;
+    color: #0ea5e9;
+}
+
+.a4-invoice .receipt-footer {
+    position: absolute;
+    bottom: 20mm;
+    width: calc(100% - 40mm);
+    text-align: center;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}

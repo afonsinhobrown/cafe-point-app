@@ -194,7 +194,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, table, onOrder
                             <div className="menu-grid">
                                 {menuItems
                                     .filter(item =>
-                                        item.category === selectedCategory &&
+                                        item.category === selectedCategory && item.category !== 'Inventário' &&
                                         (item.category !== 'Bebidas' || item.stockQuantity == null || (item.stockQuantity !== undefined && item.stockQuantity > 0))
                                     )
                                     .map(item => (

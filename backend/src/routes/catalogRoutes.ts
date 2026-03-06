@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { getBrands, createBrand, deleteBrand, getSuppliers, createSupplier, deleteSupplier } from '../controllers/catalogController';
 import { authenticateToken, isAdmin } from '../middleware/auth';
+import { requireTenant } from '../middleware/tenant';
 
 const router = Router();
 
 router.use(authenticateToken);
+router.use(requireTenant);
 
 router.get('/brands', getBrands);
 router.post('/brands', isAdmin, createBrand);

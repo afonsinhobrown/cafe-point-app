@@ -4,7 +4,11 @@ import { checkTrialLimit } from '../utils/trialLimits';
 
 export const getTables = async (req: Request, res: Response) => {
     try {
+        const user = (req as any).user;
+        const tenantFilter = user?.restaurantId ? { restaurantId: user.restaurantId } : {};
+
         const tables = await prisma.table.findMany({
+            where: tenantFilter,
             include: {
                 location: true,
                 orders: {
@@ -55,6 +59,10 @@ export const getTables = async (req: Request, res: Response) => {
 export const createTable = async (req: Request, res: Response) => {
     try {
         const { number, capacity, locationId, type } = req.body;
+        const user = (req as any).user;
+        const restaurantId = user.restaurantId;
+
+        if (!restaurantId) return res.status(403).json({ success: false, message: 'Restaurante não identificado' });
 
         // Validar dados obrigatórios
         if (!number || !capacity || !type) {
@@ -64,14 +72,11 @@ export const createTable = async (req: Request, res: Response) => {
             });
         }
 
-        const userId = (req as any).user?.id;
-        if (userId) {
-            await checkTrialLimit('table', userId);
-        }
+        await checkTrialLimit('table', restaurantId);
 
-        // Verificar se já existe mesa com este número
-        const existingTable = await prisma.table.findUnique({
-            where: { number: parseInt(number) }
+        // Verificar se já existe mesa com este número NESTE RESTAURANTE
+        const existingTable = await prisma.table.findFirst({
+            where: { number: parseInt(number), restaurantId }
         });
 
         if (existingTable) {
@@ -83,6 +88,7 @@ export const createTable = async (req: Request, res: Response) => {
 
         const table = await prisma.table.create({
             data: {
+                restaurantId,
                 number: parseInt(number),
                 capacity: parseInt(capacity),
                 locationId: locationId ? parseInt(locationId) : null,
@@ -93,7 +99,10 @@ export const createTable = async (req: Request, res: Response) => {
         });
 
         // Emitir evento de nova mesa
-        (req as any).io?.emit('tableCreated', table);
+        if ((req as any).io) {
+            // TODO: Emitir apenas para salas do tenant: .to(`tenant-${restaurantId}`)
+            (req as any).io.emit('tableCreated', table);
+        }
 
         res.status(201).json({
             success: true,
@@ -103,7 +112,7 @@ export const createTable = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Erro ao criar mesa:', error);
         const message = error instanceof Error ? error.message : 'Erro interno do servidor';
-        const statusCode = message.includes('Trial') ? 403 : 500;
+        const statusCode = message.includes('Limite') ? 403 : 500;
 
         res.status(statusCode).json({
             success: false,
@@ -116,10 +125,12 @@ export const updateTable = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { number, capacity, locationId, type } = req.body;
+        const user = (req as any).user;
+        const restaurantId = user.restaurantId;
 
-        // Verificar se a mesa existe
-        const existingTable = await prisma.table.findUnique({
-            where: { id: parseInt(id) }
+        // Verificar se a mesa existe e pertence ao tenant
+        const existingTable = await prisma.table.findFirst({
+            where: { id: parseInt(id), restaurantId }
         });
 
         if (!existingTable) {
@@ -129,10 +140,10 @@ export const updateTable = async (req: Request, res: Response) => {
             });
         }
 
-        // Se está mudando o número, verificar se não existe outra mesa com esse número
+        // Se está mudando o número, verificar conflito no tenant
         if (number && number !== existingTable.number) {
-            const tableWithNumber = await prisma.table.findUnique({
-                where: { number: parseInt(number) }
+            const tableWithNumber = await prisma.table.findFirst({
+                where: { number: parseInt(number), restaurantId }
             });
 
             if (tableWithNumber) {
@@ -154,8 +165,7 @@ export const updateTable = async (req: Request, res: Response) => {
             include: { location: true }
         });
 
-        // Emitir evento de atualização de mesa
-        (req as any).io?.emit('tableUpdated', table);
+        if ((req as any).io) (req as any).io.emit('tableUpdated', table);
 
         res.json({
             success: true,
@@ -174,10 +184,12 @@ export const updateTable = async (req: Request, res: Response) => {
 export const deleteTable = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const user = (req as any).user;
+        const restaurantId = user.restaurantId;
 
-        // Verificar se a mesa existe
-        const table = await prisma.table.findUnique({
-            where: { id: parseInt(id) },
+        // Verificar ownership e pedidos ativos
+        const table = await prisma.table.findFirst({
+            where: { id: parseInt(id), restaurantId },
             include: {
                 orders: {
                     where: {
@@ -196,7 +208,6 @@ export const deleteTable = async (req: Request, res: Response) => {
             });
         }
 
-        // Não permitir deletar mesa com pedidos ativos
         if (table.orders.length > 0) {
             return res.status(400).json({
                 success: false,
@@ -208,8 +219,7 @@ export const deleteTable = async (req: Request, res: Response) => {
             where: { id: parseInt(id) }
         });
 
-        // Emitir evento de exclusão de mesa
-        (req as any).io?.emit('tableDeleted', { id: parseInt(id) });
+        if ((req as any).io) (req as any).io.emit('tableDeleted', { id: parseInt(id) });
 
         res.json({
             success: true,
@@ -228,14 +238,22 @@ export const updateTableStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
+        const user = (req as any).user;
+
+        // Check ownership implicitly via update or Explicitly via findFirst. 
+        // Prisma update throws if not found, but it's cleaner to check context if we wanted to be strict.
+        // Assuming ID is sufficient if unique globally, but for security best practice, adding where clause if possible involves updateMany (not returns one) or checking first.
+        // Since we have req.user, let's check ownership.
+
+        const count = await prisma.table.count({ where: { id: parseInt(id), restaurantId: user.restaurantId } });
+        if (count === 0) return res.status(404).json({ success: false, message: 'Mesa não encontrada' });
 
         const table = await prisma.table.update({
             where: { id: parseInt(id) },
             data: { status }
         });
 
-        // Emitir evento de atualização de mesa
-        (req as any).io?.emit('tableUpdated', table);
+        if ((req as any).io) (req as any).io.emit('tableUpdated', table);
 
         res.json({
             success: true,

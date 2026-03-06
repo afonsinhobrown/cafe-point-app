@@ -60,6 +60,17 @@ export interface MenuItem {
     stockQuantity?: number | null;
     minStock?: number | null;
     maxStock?: number | null;
+
+    itemType?: 'PRODUCT' | 'INGREDIENT' | 'DISH';
+    recipeIngredients?: RecipeItem[];
+}
+
+export interface RecipeItem {
+    id?: number;
+    ingredientId: number;
+    ingredient?: MenuItem;
+    quantity: number;
+    unit?: string;
 }
 
 export interface Order {

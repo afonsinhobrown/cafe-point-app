@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import * as AuthController from '../controllers/authController';
-import { authenticate } from '../middleware/auth';
+import { authenticate, isRegistrar } from '../middleware/auth';
 
 const router = Router();
+
+// Rota de Registro SaaS (Multi-Tenant) - Restrita ao Staff do CaféPoint
+router.post('/register-restaurant', authenticate, isRegistrar, AuthController.registerRestaurant);
 
 // Rota normal (POST)
 router.post('/login', AuthController.login);

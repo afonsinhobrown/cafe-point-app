@@ -1,58 +1,176 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
+// ==========================================
+// SAAS CORE MODELS
+// ==========================================
+
+model Restaurant {
+  id            Int       @id @default(autoincrement())
+  name          String
+  slug          String    @unique
+  ownerName     String
+  email         String    @unique
+  phone         String?
+  address       String?
+  logo          String?
+  nuit          String?
+  ivaPercent    Float     @default(17)
+  receiptPreference String  @default("THERMAL")
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  users         User[]
+  license       License?
+  devices       Device[]
+  syncLogs      SyncLog[]
+  locations     Location[]
+  tables        Table[]
+  menuItems     MenuItem[]
+  orders        Order[]
+  suppliers     Supplier[]
+  brands        Brand[]
+  stockMovements StockMovement[]
+  planHistory   PlanHistory[]
+  expenses      Expense[]
+  reservations  Reservation[]
+  customers     Customer[]
+  attendances   Attendance[]
+  maintenances  MaintenanceRecord[]
+  feedbacks     Feedback[]
+  promotions    Promotion[]
+}
+
+model PlanHistory {
+  id           Int      @id @default(autoincrement())
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  oldPlanName  String?
+  newPlanName  String
+  price        Float
+  createdAt    DateTime @default(now())
+  changedBy    String?
+}
+
+model Plan {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  maxUsers    Int
+  maxTables   Int
+  maxItems    Int
+  monthlyPrice Float
+  duration     Int      @default(30)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  licenses    License[]
+}
+
+model License {
+  id           Int        @id @default(autoincrement())
+  restaurantId Int        @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  planId       Int
+  plan         Plan       @relation(fields: [planId], references: [id])
+  startDate    DateTime   @default(now())
+  endDate      DateTime?
+  status       String     @default("ACTIVE")
+}
+
+model Device {
+  id            Int        @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  fingerprint   String
+  type          String     @default("POS")
+  status        String     @default("PENDING_APPROVAL")
+  lastActiveAt  DateTime   @default(now())
+}
+
+model SyncLog {
+  id            Int        @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  type          String
+  status        String
+  recordsCount  Int
+  errorMessage  String?
+  createdAt     DateTime   @default(now())
+}
+
+// ==========================================
+// APP DATA MODELS
+// ==========================================
+
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  name      String
-  role      UserRole @default(WAITER)
-  createdAt DateTime @default(now())
-  
-  orders Order[]
+  id            Int      @id @default(autoincrement())
+  username      String
+  password      String
+  name          String
+  role          String   @default("WAITER")
+  restaurantId  Int?
+  restaurant    Restaurant? @relation(fields: [restaurantId], references: [id])
+  createdAt     DateTime @default(now())
+  orders        Order[]
+  stockMovements StockMovement[]
+  attendances   Attendance[]
+
+  @@unique([username, restaurantId])
 }
 
 model Location {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  
-  tables      Table[]
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  description   String?
+  tables        Table[]
+
+  @@unique([name, restaurantId])
 }
 
 model Table {
-  id          Int      @id @default(autoincrement())
-  number      Int      @unique
-  capacity    Int
-  status      TableStatus @default(AVAILABLE)
-  locationId  Int?
-  location    Location?   @relation(fields: [locationId], references: [id])
-  type        TableType   @default(TABLE_4)
-  
-  orders Order[]
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  number        Int
+  capacity      Int
+  status        String   @default("AVAILABLE")
+  type          String   @default("TABLE_4")
+  locationId    Int?
+  location      Location?   @relation(fields: [locationId], references: [id])
+  orders        Order[]
+  reservations  Reservation[]
+
+  @@unique([number, restaurantId])
 }
 
 model Order {
-  id          Int       @id @default(autoincrement())
-  tableId     Int
-  table       Table     @relation(fields: [tableId], references: [id])
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  status      OrderStatus @default(PENDING)
-  totalAmount Float     @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  orderItems OrderItem[]
+  id            Int       @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  tableId       Int
+  table         Table     @relation(fields: [tableId], references: [id])
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id])
+  customerId    Int?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  status        String    @default("PENDING")
+  totalAmount   Float     @default(0)
+  prepStartTime DateTime?
+  prepEndTime   DateTime?
+  servedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orderItems    OrderItem[]
+  feedbacks     Feedback[]
 }
 
 model OrderItem {
@@ -64,23 +182,22 @@ model OrderItem {
   quantity    Int      @default(1)
   notes       String?
   price       Float
-  course      CourseType @default(MAIN)
+  course      String   @default("MAIN")
 }
 
 model MenuItem {
   id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
   name          String
   description   String?
-  price         Float    // Current selling price
-  costPrice     Float?   @default(0) // Current cost price (last purchase)
+  price         Float    
+  costPrice     Float?   @default(0)
   category      String
-  
   brandId       Int?
   brand         Brand?    @relation(fields: [brandId], references: [id])
-  
   supplierId    Int?
   supplier      Supplier? @relation(fields: [supplierId], references: [id])
-  
   volume        String?
   unit          String?  @default("un")
   barcode       String?
@@ -90,91 +207,162 @@ model MenuItem {
   stockQuantity Int?     @default(0)
   minStock      Int?     @default(5)
   maxStock      Int?
-  
   orderItems      OrderItem[]
   stockMovements  StockMovement[]
+  itemType        String          @default("PRODUCT")
+  recipeIngredients RecipeItem[]  @relation("ParentItem")
+  partOfRecipes     RecipeItem[]  @relation("ComponentItem")
+}
+
+model RecipeItem {
+  id             Int       @id @default(autoincrement())
+  parentItemId   Int
+  parentItem     MenuItem  @relation("ParentItem", fields: [parentItemId], references: [id], onDelete: Cascade)
+  ingredientId   Int
+  ingredient     MenuItem  @relation("ComponentItem", fields: [ingredientId], references: [id])
+  quantity       Float
+  unit           String?
 }
 
 model Brand {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  items     MenuItem[]
+  id            Int       @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  items         MenuItem[]
+
+  @@unique([name, restaurantId])
 }
 
 model Supplier {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  nuit        String?   // Tax ID in Mozambique
-  email       String?
-  phone       String?
-  address     String?
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  items     MenuItem[]
-  movements StockMovement[]
+  id            Int       @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  nuit          String?
+  email         String?
+  phone         String?
+  address       String?
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  items         MenuItem[]
+  movements     StockMovement[]
+
+  @@unique([name, restaurantId])
 }
 
 model StockMovement {
   id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
   menuItemId    Int
   menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
   quantity      Int
-  type          MovementType // ENTRY, EXIT_SALE, LOSS, ADJUSTMENT
-  
-  // Historical prices at the time of movement
-  purchasePrice Float?   // Cost price when buying
-  sellingPrice  Float?   // Selling price at that time
-  
-  supplierId    Int?     // Link movement to supplier for ENTRY
+  type          String
+  lotNumber     String?
+  purchasePrice Float?
+  sellingPrice  Float?
+  supplierId    Int?
   supplier      Supplier? @relation(fields: [supplierId], references: [id])
-  
   reason        String?
   createdAt     DateTime @default(now())
   userId        Int
+  user          User     @relation(fields: [userId], references: [id])
 }
 
-enum MovementType {
-  ENTRY
-  EXIT_SALE
-  LOSS
-  ADJUSTMENT
+model Expense {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  description   String
+  amount        Float
+  category      String
+  date          DateTime @default(now())
+  isPaid        Boolean  @default(true)
+  paymentMethod String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
-enum UserRole {
-  WAITER
-  KITCHEN
-  ADMIN
+model Reservation {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  customerName  String
+  customerPhone String?
+  tableId       Int?
+  table         Table?    @relation(fields: [tableId], references: [id])
+  date          DateTime
+  guests        Int      @default(1)
+  status        String   @default("CONFIRMED")
+  notes         String?
+  createdAt     DateTime @default(now())
 }
 
-enum TableStatus {
-  AVAILABLE
-  OCCUPIED
-  RESERVED
+model Customer {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  email         String?
+  phone         String?
+  birthday      DateTime?
+  gender        String?
+  ageRange      String?
+  type          String   @default("INDIVIDUAL")
+  orders        Order[]
+  feedbacks     Feedback[]
+  createdAt     DateTime @default(now())
 }
 
-enum TableType {
-  BAR_COUNTER
-  TABLE_2
-  TABLE_4  
-  TABLE_6
-  TABLE_8
-  BOOTH
+model Attendance {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  checkIn       DateTime @default(now())
+  checkOut      DateTime?
+  status        String   @default("ACTIVE")
 }
 
-enum OrderStatus {
-  PENDING
-  PREPARING
-  READY
-  SERVED
-  PAID
-  CANCELLED
+model MaintenanceRecord {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  item          String
+  description   String
+  cost          Float    @default(0)
+  status        String   @default("PENDING")
+  date          DateTime @default(now())
 }
 
-enum CourseType {
-  STARTER
-  MAIN
-  DESSERT
-  DRINK
+model Feedback {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  customerId    Int?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  orderId       Int?
+  order         Order?    @relation(fields: [orderId], references: [id])
+  rating        Int
+  nps           Int?
+  comment       String?
+  type          String   @default("GENERAL")
+  createdAt     DateTime @default(now())
+}
+
+model Promotion {
+  id            Int      @id @default(autoincrement())
+  restaurantId  Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  name          String
+  description   String?
+  type          String
+  value         Float
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean  @default(true)
 }

@@ -4,9 +4,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import fs from 'fs';
 
 import routes from './routes';
 import { setupSocket } from './utils/socket';
+import { verifyLicense } from './utils/licenseManager';
 
 const app = express();
 const httpServer = createServer(app);
@@ -23,13 +25,32 @@ app.use((req, res, next) => {
     next();
 });
 
-// Middleware
-// app.use(helmet()); // Desativado temporariamente para debug
+// ✅ Verificação de Licença Global
 app.use((req, res, next) => {
+    if (req.path === '/api/license-status' || !req.path.startsWith('/api')) {
+        return next();
+    }
+
+    const license = verifyLicense();
+    if (!license.valid) {
+        console.log(`🚫 [LICENSE BLOCK] Path: ${req.path} | Reason: ${license.error}`);
+        return res.status(403).json({
+            success: false,
+            licenseError: true,
+            message: license.error,
+            machineId: license.machineId
+        });
+    }
+    next();
+});
+
+// Middleware
+app.use((req, res, next) => { // Logging simples
     console.log(`[REQUEST] ${req.method} ${req.url}`);
     next();
 });
-// Configuração CORS Robusta (Credenciais + Origem Dinâmica)
+
+// Configuração CORS Robusta
 app.use(cors({
     origin: true,
     credentials: true,
@@ -37,14 +58,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// ✅ Forçar Headers para evitar bloqueios de Preflight (OPTIONS) em Mobile
+// ✅ Forçar Headers para evitar bloqueios de Preflight
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
     res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
     res.header("Access-Control-Allow-Credentials", "true");
 
-    // Se for OPTIONS (Preflight), responde OK imediatamente
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
@@ -53,53 +73,71 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Rota raiz (/) redirecionada para o Frontend (React) pelo handler estático abaixo
-
-// ✅ Health Check (Mais detalhado)
+// ✅ Health Check
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
-        serverTime: new Date().toISOString(),
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        service: 'CaféPoint API'
+        time: new Date().toISOString()
+    });
+});
+
+// ✅ License Status
+app.get('/api/license-status', (req, res) => {
+    const result = verifyLicense();
+    if (!result.valid) {
+        return res.status(403).json({
+            valid: false,
+            message: result.error,
+            machineId: result.machineId,
+            licenseError: true
+        });
+    }
+    res.json({
+        valid: true,
+        daysRemaining: result.daysRemaining,
+        expiryDate: result.data?.expiryDate,
+        restaurantName: result.data?.restaurantName,
+        machineId: result.machineId
     });
 });
 
 // ✅ Rotas da API
 app.use('/api', routes);
 
-// Socket.io (Restaurado)
+// Socket.io
 setupSocket(io);
 
 // ✅ Servir Arquivos Estáticos do Frontend (Produção)
-// O Vite gera o build na pasta 'dist', nós copiamos para 'public' no backend
-const publicPath = path.join(process.cwd(), 'public');
+// NOTA: O instalador copia o frontend para 'backend/dist/public'
+// Como este ficheiro compilado vive em 'backend/dist/src/app.js', subir um nível (../) leva a 'backend/dist'.
+// Portanto '../public' aponta corretamente para 'backend/dist/public'.
+const publicPath = path.join(__dirname, '../public');
+const uploadsPath = path.join(__dirname, '../uploads');
+
+if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+}
+
 console.log('📂 Static Path:', publicPath);
 app.use(express.static(publicPath));
+app.use('/uploads', express.static(uploadsPath));
 
-// ✅ Fallback para SPA (React Router) - Qualquer rota não-API retorna o index.html
+// ✅ Fallback para SPA (React Router)
 app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
-        return next(); // Se for API, passa para o handler 404 abaixo
+        return next();
     }
     const indexPath = path.join(publicPath, 'index.html');
-    res.sendFile(indexPath, (err) => {
-        if (err) {
-            console.error('❌ Erro ao servir index.html:', err);
-            res.status(404).json({ error: 'Frontend não encontrado. Execute o script de build.' });
-        }
-    });
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).json({ error: 'Frontend nao encontrado. Verifique a pasta public.' });
+    }
 });
 
-// ✅ Rota padrão para 404 (Tratamento de erro da API)
+// ✅ 404 Handler
 app.all('*', (req, res) => {
-    res.status(404).json({
-        error: 'Rota não encontrada',
-        path: req.originalUrl,
-        method: req.method,
-        availableMainEndpoints: ['/api/auth', '/api/orders', '/api/menu']
-    });
+    res.status(404).json({ error: 'Rota nao encontrada' });
 });
 
 export default httpServer;
