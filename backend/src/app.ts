@@ -88,7 +88,7 @@ app.get('/api/license-status', authenticate, async (req, res) => {
     try {
         // Obter usuário autenticado para licença real do restaurante
         const user = (req as any).user;
-        
+
         if (user && user.restaurantId) {
             // Buscar licença real do banco de dados
             const license = await prisma.license.findUnique({
