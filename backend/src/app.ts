@@ -27,22 +27,15 @@ app.use((req, res, next) => {
     next();
 });
 
-// ✅ Verificação de Licença Global
+// ✅ SaaS Mode: Sem verificação de arquivo local
+// Licenças são validadas por autenticação + banco de dados
+// Não há fallback offline se não conseguir conectar ao banco
 app.use((req, res, next) => {
+    // Pular verificação para license-status e arquivos estáticos
     if (req.path === '/api/license-status' || !req.path.startsWith('/api')) {
         return next();
     }
-
-    const license = verifyLicense();
-    if (!license.valid) {
-        console.log(`🚫 [LICENSE BLOCK] Path: ${req.path} | Reason: ${license.error}`);
-        return res.status(403).json({
-            success: false,
-            licenseError: true,
-            message: license.error,
-            machineId: license.machineId
-        });
-    }
+    // Para todas as rotas de API, a autenticação (middleware) verifica licença via banco
     next();
 });
 
@@ -83,46 +76,79 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// ✅ License Status (Autenticado - para usuários logados)
+// ✅ License Status - SaaS Mode (Internet Obrigatória)
 app.get('/api/license-status', authenticate, async (req, res) => {
     try {
-        // Obter usuário autenticado para licença real do restaurante
         const user = (req as any).user;
 
-        if (user && user.restaurantId) {
-            // Buscar licença real do banco de dados
-            const license = await prisma.license.findUnique({
-                where: { restaurantId: user.restaurantId },
-                include: { plan: true }
+        if (!user || !user.restaurantId) {
+            return res.status(401).json({
+                valid: false,
+                message: 'Autenticação obrigatória',
+                licenseError: true
             });
-
-            if (license && license.endDate) {
-                const now = new Date();
-                const endDate = new Date(license.endDate);
-                const diffTime = endDate.getTime() - now.getTime();
-                const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                return res.json({
-                    valid: daysRemaining > 0,
-                    daysRemaining: Math.max(0, daysRemaining),
-                    expiryDate: license.endDate,
-                    startDate: license.startDate,
-                    restaurantName: user.restaurantName || 'Restaurante',
-                    planName: license.plan?.name,
-                    status: license.status
-                });
-            }
         }
 
-        // Se não encontrou licença no banco, retornar erro
-        return res.status(404).json({
-            valid: false,
-            message: 'Licença não encontrada para este restaurante',
-            daysRemaining: 0
+        // 🔴 MODO SAAS: Buscar APENAS do banco de dados
+        // SEM FALLBACK OFFLINE
+        const license = await prisma.license.findUnique({
+            where: { restaurantId: user.restaurantId },
+            include: { plan: true }
         });
+
+        if (!license) {
+            return res.status(404).json({
+                valid: false,
+                message: 'Licença não encontrada para este restaurante',
+                daysRemaining: 0,
+                licenseError: true
+            });
+        }
+
+        // Verificar expiração
+        const now = new Date();
+        let endDate = license.endDate ? new Date(license.endDate) : null;
+        if (!endDate && license.startDate && license.plan?.duration) {
+            endDate = new Date(license.startDate);
+            endDate.setDate(endDate.getDate() + license.plan.duration);
+        }
+        if (!endDate) {
+            return res.status(500).json({
+                valid: false,
+                message: 'Data de expiração não configurada',
+                licenseError: true
+            });
+        }
+        const diffTime = endDate.getTime() - now.getTime();
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Se expirou, retornar com dias zerados
+        const isValid = daysRemaining > 0;
+
+        return res.json({
+            valid: isValid,
+            daysRemaining: Math.max(0, daysRemaining),
+            expiryDate: endDate,
+            startDate: license.startDate,
+            restaurantName: user.restaurantName || 'Restaurante',
+            planName: license.plan?.name,
+            planId: license.planId,
+            status: license.status,
+            source: 'DATABASE',  // Sempre database (SaaS)
+            message: isValid ? 'Licença ativa' : 'Licença expirada'
+        });
+
     } catch (error) {
-        console.error('Erro ao obter status de licença:', error);
-        res.status(500).json({ valid: false, message: 'Erro ao verificar licença' });
+        console.error('💥 Erro ao verificar status de licença:', error);
+
+        // Se não conseguir conectar ao banco, retornar erro
+        return res.status(503).json({
+            valid: false,
+            message: 'Serviço indisponível. Verifique sua conexão de internet e tente novamente.',
+            licenseError: true,
+            daysRemaining: 0,
+            source: 'ERROR'
+        });
     }
 });
 

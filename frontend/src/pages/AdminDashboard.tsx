@@ -85,14 +85,20 @@ const AdminDashboard: React.FC = () => {
     const openApplyPlanModal = (restaurant: any) => {
         const currentPlanId = restaurant.license?.planId ? String(restaurant.license.planId) : '';
         const fallbackPlanId = plans.length > 0 ? String(plans[0].id) : '';
-        const startDate = toDateInput(restaurant.license?.startDate) || toDateInput(new Date());
+        
+        // Para renovação, usar a data de expiração atual ou hoje (o que for maior)
+        const existingEndDate = restaurant.license?.endDate ? new Date(restaurant.license.endDate) : null;
+        const today = new Date();
+        const startDate = existingEndDate && existingEndDate > today 
+            ? toDateInput(existingEndDate) 
+            : toDateInput(today);
 
         setSelectedRestaurantForPlan(restaurant);
         setApplyMode('days');
         setApplyPlanForm({
             planId: currentPlanId || fallbackPlanId,
             startDate,
-            endDate: toDateInput(restaurant.license?.endDate),
+            endDate: '',
             durationDays: restaurant.license?.plan?.duration ? String(restaurant.license.plan.duration) : '30'
         });
         setApplyPlanModalOpen(true);

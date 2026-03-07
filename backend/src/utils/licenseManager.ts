@@ -88,21 +88,23 @@ const checkClockRollback = () => {
 };
 
 export const verifyLicense = (): LicenseResult => {
-    // Skip license check for cloud/production deployments (Render, Railway, etc.)
+    // SaaS MODE: Internet obrigatória
+    // Verifica se está em modo cloud/production
     if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
-        console.log('🌐 Running in cloud mode - license check bypassed');
+        console.log('🟢 SaaS MODE ATIVO - Validação via DATABASE obrigatória');
         return {
             valid: true,
             data: {
-                machineId: 'CLOUD_DEPLOYMENT',
+                machineId: 'CAFEPOINT_SAAS',
                 expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-                restaurantName: 'CafePoint Cloud'
+                restaurantName: 'CafePoint SaaS'
             },
             daysRemaining: 365,
-            machineId: 'CLOUD_DEPLOYMENT'
+            machineId: 'CAFEPOINT_SAAS'
         };
     }
 
+    // LOCAL DEVELOPMENT: Verifica arquivo (fallback apenas para development)
     const paths = getLicensePaths();
     const currentMachineId = getMachineId();
     const now = new Date();

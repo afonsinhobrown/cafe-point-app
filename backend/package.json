@@ -32,6 +32,7 @@
     "@types/jsonwebtoken": "^9.0.2",
     "@types/multer": "^2.0.0",
     "@types/node": "^20.19.25",
+    "pg": "^8.20.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.0.0"
   }

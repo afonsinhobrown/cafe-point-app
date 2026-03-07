@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';  // ← MUDAR PARA IMPORT *
+import * as jwt from 'jsonwebtoken';
+import prisma from '../config/database';
 
 export interface AuthRequest extends Request {
     user?: {
@@ -76,4 +77,66 @@ export const allowRoles = (roles: string[]) => {
         }
         next();
     };
+};
+
+// 🔴 SaaS MODE: Verificação de licença via banco (obrigatório)
+export const checkLicense = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        if (!req.user || !req.user.restaurantId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Restaurante não identificado',
+                licenseError: true
+            });
+        }
+
+        // Buscar licença do banco
+        const license = await prisma.license.findUnique({
+            where: { restaurantId: req.user.restaurantId },
+            include: { plan: true }
+        });
+
+        // Se não tiver licença
+        if (!license) {
+            return res.status(403).json({
+                success: false,
+                message: 'Licença não encontrada. Contacte o administrador.',
+                licenseError: true
+            });
+        }
+
+        // Verificar expiração
+        const now = new Date();
+        let endDate = license.endDate ? new Date(license.endDate) : null;
+        if (!endDate && license.startDate && license.plan?.duration) {
+            endDate = new Date(license.startDate);
+            endDate.setDate(endDate.getDate() + license.plan.duration);
+        }
+        if (!endDate) {
+            return res.status(500).json({
+                success: false,
+                message: 'Data de expiração não configurada',
+                licenseError: true
+            });
+        }
+
+        if (now > endDate) {
+            return res.status(403).json({
+                success: false,
+                message: `Licença expirada em ${endDate.toLocaleDateString()}`,
+                licenseError: true
+            });
+        }
+
+        // Licença válida - continuar
+        (req as any).license = license;
+        next();
+    } catch (error) {
+        console.error('❌ Erro ao verificar licença:', error);
+        res.status(503).json({
+            success: false,
+            message: 'Erro ao verificar licença. Verifique sua conexão de internet.',
+            licenseError: true
+        });
+    }
 };

@@ -188,6 +188,42 @@ export const login = async (req: Request, res: Response) => {
             return res.status(403).json({ success: false, message: 'Conta do restaurante suspensa ou inativa.' });
         }
 
+        // 🔴 VERIFICAÇÃO DE LICENÇA - SaaS Mode (OBRIGATÓRIA NO LOGIN)
+        // ⚠️ NÃO verificar para SUPER_ADMIN (precisa acessar para aplicar licenças)
+        if (user.role !== 'SUPER_ADMIN' && user.restaurantId) {
+            const license = await prisma.license.findUnique({
+                where: { restaurantId: user.restaurantId },
+                include: { plan: true }
+            });
+
+            if (!license) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Sem licença ativa. Contacte o administrador para ativar a sua conta.',
+                    licenseError: true
+                });
+            }
+
+            // Verificar expiração da licença
+            const now = new Date();
+            let endDate = license.endDate ? new Date(license.endDate) : null;
+
+            // Compatibilidade com licenças antigas: endDate nulo.
+            if (!endDate && license.startDate && license.plan?.duration) {
+                endDate = new Date(license.startDate);
+                endDate.setDate(endDate.getDate() + license.plan.duration);
+            }
+
+            if (!endDate || now > endDate) {
+                return res.status(403).json({
+                    success: false,
+                    message: `Licença expirada em ${endDate ? endDate.toLocaleDateString() : 'data desconhecida'}. Contacte o administrador.`,
+                    licenseError: true,
+                    expired: true
+                });
+            }
+        }
+
         // --- GESTÃO DE DISPOSITIVO (NOVO) ---
         if (deviceId && user.restaurantId) {
             const existingDevice = await prisma.device.findFirst({

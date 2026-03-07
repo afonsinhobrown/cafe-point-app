@@ -88,6 +88,14 @@ function App() {
         let retries = 0;
         const maxRetries = 5;
 
+        const token = localStorage.getItem('token');
+        // Public pages (landing/login) must render without license check.
+        if (!token) {
+            setIsLicenseValid(true);
+            setIsNetworkError(false);
+            return;
+        }
+
         const checkLicense = async () => {
             try {
                 const res = await getLicenseStatus();
@@ -96,7 +104,13 @@ function App() {
             } catch (error: any) {
                 console.error('Erro na validação de licença:', error);
 
-                if (error.response?.status === 403) {
+                if (error.response?.status === 401) {
+                    // Sessão inválida: libera páginas públicas e deixa o login assumir.
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setIsLicenseValid(true);
+                    setIsNetworkError(false);
+                } else if (error.response?.status === 403) {
                     // Bloqueio explícito do servidor
                     setIsLicenseValid(false);
                 } else if (!error.response) {
