@@ -24,7 +24,7 @@ router.use('/menu', menuRoutes);
 router.use('/locations', locationRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/cash', cashRoutes);
-router.use('/reports', authenticateToken, isAdmin, reportRoutes);
+router.use('/reports', authenticateToken, reportRoutes);
 router.use('/stock', authenticateToken, isAdmin, stockRoutes);
 router.use('/catalog', authenticateToken, isAdmin, catalogRoutes);
 router.use('/admin', authenticateToken, adminRoutes);

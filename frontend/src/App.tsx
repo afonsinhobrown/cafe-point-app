@@ -19,6 +19,7 @@ import Drinks from './pages/Drinks';
 import Team from './pages/Team';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
+import Landing from './pages/Landing';
 import LicenseError from './pages/LicenseError';
 import { getLicenseStatus } from './services/api';
 import './App.css';
@@ -225,7 +226,7 @@ function App() {
                         <Route
                             path="/reports"
                             element={
-                                <ProtectedRoute roles={['ADMIN', 'SUPER_ADMIN']}>
+                                <ProtectedRoute roles={['ADMIN', 'SUPER_ADMIN', 'WAITER']}>
                                     <Reports />
                                 </ProtectedRoute>
                             }
@@ -270,7 +271,7 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                        <Route path="/" element={<Landing />} />
                     </Routes>
                 </div>
             </Router>

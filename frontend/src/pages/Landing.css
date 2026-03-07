@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;600;700;800&display=swap');
+
+.landing-page {
+    --landing-bg: #f8f4ea;
+    --landing-text: #1f1a16;
+    --landing-accent: #d65835;
+    --landing-deep: #3f2417;
+    --landing-soft: #fff7ed;
+    background: radial-gradient(circle at 20% 20%, #ffe3c2 0%, #f8f4ea 55%, #f4ede0 100%);
+    color: var(--landing-text);
+    min-height: 100vh;
+    font-family: 'Manrope', sans-serif;
+    padding-bottom: 60px;
+}
+
+.hero-section {
+    position: relative;
+    min-height: 78vh;
+    display: grid;
+    align-items: end;
+    overflow: hidden;
+}
+
+.hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, rgba(20, 14, 12, 0.85) 10%, rgba(20, 14, 12, 0.4) 56%, rgba(20, 14, 12, 0.2) 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 760px;
+    padding: 42px 34px 54px;
+    color: #fff5ea;
+    animation: riseIn 0.7s ease;
+}
+
+.hero-kicker {
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.hero-content h1 {
+    margin: 10px 0 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 4.8rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+}
+
+.hero-content p {
+    max-width: 620px;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.hero-actions {
+    margin-top: 22px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 12px 22px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--landing-accent);
+    color: #fff;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+}
+
+.culinary-gallery {
+    margin: -40px auto 0;
+    width: min(1180px, calc(100% - 30px));
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    position: relative;
+    z-index: 3;
+}
+
+.gallery-card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(60, 33, 14, 0.18);
+}
+
+.gallery-card img {
+    width: 100%;
+    height: 230px;
+    object-fit: cover;
+}
+
+.gallery-label {
+    padding: 14px 16px;
+    font-weight: 700;
+    color: var(--landing-deep);
+}
+
+.plans-section,
+.supplier-section {
+    width: min(1180px, calc(100% - 30px));
+    margin: 42px auto 0;
+}
+
+.section-head h2,
+.supplier-card h2 {
+    margin: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    color: var(--landing-deep);
+    letter-spacing: 0.02em;
+}
+
+.mini-title {
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #8c563f;
+}
+
+.plans-grid {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.plan-card {
+    background: linear-gradient(180deg, #fffdf8, var(--landing-soft));
+    border: 1px solid #f0dcc7;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.plan-card h3 {
+    margin: 0;
+    color: var(--landing-accent);
+    font-size: 1.1rem;
+}
+
+.plan-subtitle {
+    margin: 8px 0;
+    color: #6e4d3a;
+    min-height: 40px;
+}
+
+.plan-price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--landing-deep);
+    margin: 8px 0 12px;
+}
+
+.plan-card ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+}
+
+.supplier-card {
+    background: #fff;
+    border: 1px solid #f0dcc7;
+    border-radius: 16px;
+    padding: 22px;
+}
+
+.supplier-data {
+    margin-top: 14px;
+    display: grid;
+    gap: 8px;
+    color: #50392b;
+}
+
+@keyframes riseIn {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 900px) {
+    .culinary-gallery,
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-content {
+        padding: 28px 20px 36px;
+    }
+
+    .gallery-card img {
+        height: 220px;
+    }
+}

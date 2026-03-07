@@ -37,6 +37,7 @@ const Header: React.FC = () => {
                             <>
                                 <Link to="/tables" className={location.pathname === '/tables' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Mesas</Link>
                                 <Link to="/orders" className={location.pathname === '/orders' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Pedidos</Link>
+                                <Link to="/reports" className={location.pathname === '/reports' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Faturação</Link>
                             </>
                         )}
 
@@ -54,7 +55,6 @@ const Header: React.FC = () => {
                                 <div className="nav-divider"></div>
                                 {/* <Link to="/subscription" className={location.pathname === '/subscription' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Assinatura</Link> */}
                                 <Link to="/analytics" className={location.pathname === '/analytics' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>BI & Relatórios</Link>
-                                <Link to="/reports" className={location.pathname === '/reports' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Faturação</Link>
                                 <Link to="/drinks" className={location.pathname === '/drinks' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Estoque</Link>
                                 <Link to="/menu" className={location.pathname === '/menu' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Cardápio</Link>
                                 <Link to="/locations" className={location.pathname === '/locations' ? 'active' : ''} onClick={() => setIsMenuOpen(false)}>Áreas</Link>
