@@ -42,6 +42,7 @@ model Restaurant {
   expenses      Expense[]
   cashSessions  CashSession[]
   cashMovements CashMovement[]
+  cashBoxes     CashBox[]
   reservations  Reservation[]
   customers     Customer[]
   attendances   Attendance[]
@@ -293,6 +294,22 @@ model Expense {
   updatedAt     DateTime @updatedAt
 }
 
+model CashBox {
+  id             Int       @id @default(autoincrement())
+  restaurantId   Int
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
+  name           String
+  description    String?
+  type           String    @default("DRAWER")  // DRAWER, SAFE, REGISTER
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  originMovements   CashMovement[] @relation("OriginBox")
+  destinationMovements CashMovement[] @relation("DestinationBox")
+
+  @@unique([name, restaurantId])
+}
+
 model CashSession {
   id             Int       @id @default(autoincrement())
   restaurantId   Int
@@ -318,6 +335,10 @@ model CashMovement {
   cashSession    CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
   userId         Int
   user           User      @relation(fields: [userId], references: [id])
+  originCashBoxId    Int?
+  originCashBox      CashBox? @relation("OriginBox", fields: [originCashBoxId], references: [id])
+  destinationCashBoxId Int?
+  destinationCashBox CashBox? @relation("DestinationBox", fields: [destinationCashBoxId], references: [id])
   type           String
   amount         Float
   description    String?

@@ -135,7 +135,7 @@ export const createCashMovement = async (req: AuthRequest, res: Response) => {
     try {
         const restaurantId = req.user?.restaurantId;
         const userId = req.user?.id;
-        const { type, amount, description } = req.body;
+        const { type, amount, description, originCashBoxId, destinationCashBoxId } = req.body;
 
         if (!restaurantId || !userId) {
             return res.status(401).json({ success: false, message: 'Acesso negado' });
@@ -143,6 +143,16 @@ export const createCashMovement = async (req: AuthRequest, res: Response) => {
 
         if (!ALL_CASH_MOVEMENT_TYPES.has(type)) {
             return res.status(400).json({ success: false, message: 'Tipo de movimento inválido.' });
+        }
+
+        // Validar transferência interna
+        if (type === 'INTERNAL_TRANSFER') {
+            if (!originCashBoxId || !destinationCashBoxId) {
+                return res.status(400).json({ success: false, message: 'Origem e destino são obrigatórios para transferências internas' });
+            }
+            if (originCashBoxId === destinationCashBoxId) {
+                return res.status(400).json({ success: false, message: 'Origem e destino devem ser diferentes' });
+            }
         }
 
         const rawAmount = Number(amount);
@@ -167,7 +177,13 @@ export const createCashMovement = async (req: AuthRequest, res: Response) => {
                 userId,
                 type,
                 amount: signedAmount,
-                description: description || null
+                description: description || null,
+                originCashBoxId: originCashBoxId || null,
+                destinationCashBoxId: destinationCashBoxId || null
+            },
+            include: {
+                originCashBox: true,
+                destinationCashBox: true
             }
         });
 

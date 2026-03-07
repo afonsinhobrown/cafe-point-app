@@ -251,6 +251,76 @@ export const suspendRestaurant = async (req: Request, res: Response) => {
     }
 };
 
+export const getCashBoxes = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const boxes = await prisma.cashBox.findMany({
+            where: { restaurantId, isActive: true },
+            orderBy: { createdAt: 'asc' }
+        });
+        res.json({ success: true, data: boxes });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao buscar caixas' });
+    }
+};
+
+export const createCashBox = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const { name, description, type } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ success: false, message: 'Nome da caixa é obrigatório' });
+        }
+
+        const newBox = await prisma.cashBox.create({
+            data: {
+                restaurantId,
+                name,
+                description,
+                type: type || 'DRAWER'
+            }
+        });
+        res.json({ success: true, data: newBox, message: 'Caixa criada com sucesso' });
+    } catch (error: any) {
+        if (error.code === 'P2002') {
+            return res.status(400).json({ success: false, message: 'Já existe uma caixa com esse nome' });
+        }
+        res.status(500).json({ success: false, message: 'Erro ao criar caixa' });
+    }
+};
+
+export const updateCashBox = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const boxId = parseInt(req.params.boxId);
+        const { name, description, type, isActive } = req.body;
+
+        const updated = await prisma.cashBox.update({
+            where: { id: boxId },
+            data: { name, description, type, isActive }
+        });
+        res.json({ success: true, data: updated, message: 'Caixa atualizada' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao atualizar caixa' });
+    }
+};
+
+export const deleteCashBox = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const boxId = parseInt(req.params.boxId);
+
+        await prisma.cashBox.updateMany({
+            where: { id: boxId, restaurantId },
+            data: { isActive: false }
+        });
+        res.json({ success: true, message: 'Caixa desativada' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao desativar caixa' });
+    }
+};
+
 export const applyPlanToRestaurant = async (req: Request, res: Response) => {
     try {
         const restaurantId = parseInt(req.params.id);

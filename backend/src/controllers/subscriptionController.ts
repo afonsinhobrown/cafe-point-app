@@ -60,20 +60,22 @@ export const requestUpgrade = async (req: Request, res: Response) => {
         // Get Current License (for history)
         const currentLicense = await prisma.license.findUnique({ where: { restaurantId }, include: { plan: true } });
 
+        // Calcular datas para o novo plano
+        const planStartDate = new Date();
+        const planEndDate = new Date(planStartDate);
+        planEndDate.setDate(planEndDate.getDate() + (newPlan.duration || 30));
+
         // Atualizar Licença (Simulação de Pagamento)
         const updatedLicense = await prisma.license.update({
             where: { restaurantId },
             data: {
                 planId: planId,
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                startDate: planStartDate,
+                endDate: planEndDate
             },
             include: { plan: true }
         });
-
-        // 📝 Registrar no Histórico do Restaurante
-        const planStartDate = new Date();
-        const planEndDate = new Date(planStartDate);
-        planEndDate.setDate(planEndDate.getDate() + (newPlan.duration || 30));
 
         await prisma.planHistory.create({
             data: {

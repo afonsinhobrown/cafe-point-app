@@ -123,6 +123,12 @@ export const closeCashSession = (data: { closingBalance?: number; notes?: string
 export const getCashMovements = (params?: any) => api.get('/cash/movements', { params });
 export const createCashMovement = (data: { type: 'ENTRY' | 'WITHDRAWAL' | 'INTERNAL_TRANSFER'; amount: number; description?: string }) => api.post('/cash/movements', data);
 
+// Cash Boxes
+export const getCashBoxes = () => api.get('/admin/restaurants/{restaurantId}/cashboxes');
+export const createCashBox = (restaurantId: number, data: any) => api.post(`/admin/restaurants/${restaurantId}/cashboxes`, data);
+export const updateCashBox = (restaurantId: number, boxId: number, data: any) => api.put(`/admin/restaurants/${restaurantId}/cashboxes/${boxId}`, data);
+export const deleteCashBox = (restaurantId: number, boxId: number) => api.delete(`/admin/restaurants/${restaurantId}/cashboxes/${boxId}`);
+
 // Auth (SaaS)
 export const registerRestaurant = (data: any) => api.post('/auth/register-restaurant', data);
 

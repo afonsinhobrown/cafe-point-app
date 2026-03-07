@@ -12,7 +12,11 @@ import {
     approveDevice,      // NOVO
     blockDevice,        // NOVO
     getRestaurantPlanHistory, // NOVO
-    applyPlanToRestaurant
+    applyPlanToRestaurant,
+    getCashBoxes,
+    createCashBox,
+    updateCashBox,
+    deleteCashBox
 } from '../controllers/adminController';
 import { isSuperAdmin } from '../middleware/auth';
 
@@ -41,5 +45,11 @@ router.put('/plans/:id', updatePlan);
 router.get('/devices', getAdminDevices);
 router.post('/devices/:id/approve', approveDevice);
 router.post('/devices/:id/block', blockDevice);
+
+// Cash Boxes (Caixas/Gavetas)
+router.get('/restaurants/:restaurantId/cashboxes', getCashBoxes);
+router.post('/restaurants/:restaurantId/cashboxes', createCashBox);
+router.put('/restaurants/:restaurantId/cashboxes/:boxId', updateCashBox);
+router.delete('/restaurants/:restaurantId/cashboxes/:boxId', deleteCashBox);
 
 export default router;

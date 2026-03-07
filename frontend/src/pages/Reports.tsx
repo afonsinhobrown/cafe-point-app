@@ -51,8 +51,14 @@ const Reports: React.FC = () => {
     const [cashMovementForm, setCashMovementForm] = useState({
         type: 'ENTRY',
         amount: '',
-        description: ''
+        description: '',
+        originCashBoxId: '',
+        destinationCashBoxId: ''
     });
+
+    const [cashBoxes, setCashBoxes] = useState<any[]>([]);
+    const [newCashBoxForm, setNewCashBoxForm] = useState({ name: '', description: '', type: 'DRAWER' });
+    const [isCashBoxManager, setIsCashBoxManager] = useState(false);
 
     const periods = [
         { id: 'day', label: 'Hoje' },
@@ -63,6 +69,7 @@ const Reports: React.FC = () => {
 
     useEffect(() => {
         loadData();
+        loadCashBoxes();
     }, [period]);
 
     const loadData = async () => {
@@ -90,6 +97,64 @@ const Reports: React.FC = () => {
             console.error('Erro ao carregar relatórios:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadCashBoxes = async () => {
+        try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const restaurantId = user?.restaurantId;
+
+            if (!restaurantId) {
+                setCashBoxes([]);
+                return;
+            }
+
+            const response = await (api as any).get(`/admin/restaurants/${restaurantId}/cashboxes`);
+            setCashBoxes(response?.data?.data || []);
+        } catch (error) {
+            console.error('Erro ao carregar caixas:', error);
+            setCashBoxes([]);
+        }
+    };
+
+    const handleCreateCashBox = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            // Obter restaurantId do user
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const restaurantId = user?.restaurantId;
+
+            if (!restaurantId) {
+                alert('ID do restaurante não encontrado');
+                return;
+            }
+
+            await (api as any).post(`/admin/restaurants/${restaurantId}/cashboxes`, newCashBoxForm);
+            alert('Caixa criada com sucesso!');
+            setNewCashBoxForm({ name: '', description: '', type: 'DRAWER' });
+            loadCashBoxes();
+        } catch (error: any) {
+            alert(error?.response?.data?.message || 'Erro ao criar caixa');
+        }
+    };
+
+    const handleDeleteCashBox = async (boxId: number) => {
+        if (!confirm('Desativar esta caixa?')) return;
+        try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const restaurantId = user?.restaurantId;
+
+            if (!restaurantId) return;
+
+            await (api as any).delete(`/admin/restaurants/${restaurantId}/cashboxes/${boxId}`);
+            alert('Caixa desativada');
+            loadCashBoxes();
+        } catch (error: any) {
+            alert('Erro ao desativar caixa');
         }
     };
 
@@ -226,9 +291,19 @@ const Reports: React.FC = () => {
             await createCashMovement({
                 type: cashMovementForm.type as 'ENTRY' | 'WITHDRAWAL' | 'INTERNAL_TRANSFER',
                 amount: Number(cashMovementForm.amount),
-                description: cashMovementForm.description
+                description: cashMovementForm.description,
+                ...(cashMovementForm.type === 'INTERNAL_TRANSFER' && {
+                    originCashBoxId: Number(cashMovementForm.originCashBoxId) || undefined,
+                    destinationCashBoxId: Number(cashMovementForm.destinationCashBoxId) || undefined
+                })
             });
-            setCashMovementForm({ type: 'ENTRY', amount: '', description: '' });
+            setCashMovementForm({
+                type: 'ENTRY',
+                amount: '',
+                description: '',
+                originCashBoxId: '',
+                destinationCashBoxId: ''
+            });
             await loadData();
         } catch (error: any) {
             alert(error?.response?.data?.message || 'Erro ao registrar movimento de caixa');
@@ -376,6 +451,35 @@ const Reports: React.FC = () => {
                                     <option value="WITHDRAWAL">Saque</option>
                                     <option value="INTERNAL_TRANSFER">Transferência Interna</option>
                                 </select>
+
+                                {cashMovementForm.type === 'INTERNAL_TRANSFER' && (
+                                    <>
+                                        <select
+                                            value={cashMovementForm.originCashBoxId || ''}
+                                            onChange={e => setCashMovementForm(prev => ({ ...prev, originCashBoxId: e.target.value }))}
+                                            required
+                                        >
+                                            <option value="">Origem (Caixa/Gaveta)</option>
+                                            {cashBoxes.map(box => (
+                                                <option key={box.id} value={box.id}>{box.name}</option>
+                                            ))}
+                                        </select>
+                                        <select
+                                            value={cashMovementForm.destinationCashBoxId || ''}
+                                            onChange={e => setCashMovementForm(prev => ({ ...prev, destinationCashBoxId: e.target.value }))}
+                                            required
+                                        >
+                                            <option value="">Destino (Caixa/Gaveta)</option>
+                                            {cashBoxes.map(box => (
+                                                <option key={box.id} value={box.id}>{box.name}</option>
+                                            ))}
+                                        </select>
+                                        <button type="button" className="manage-boxes-btn" onClick={() => setIsCashBoxManager(!isCashBoxManager)}>
+                                            {isCashBoxManager ? '✖ Fechar' : '⚙ Gerenciar Caixas'}
+                                        </button>
+                                    </>
+                                )}
+
                                 <input
                                     type="number"
                                     step="0.01"
@@ -410,6 +514,62 @@ const Reports: React.FC = () => {
                         </div>
                     )}
                 </div>
+
+                    {isCashBoxManager && (
+                        <div className="cash-box-manager-card">
+                            <h4>Gerenciar Caixas/Gavetas</h4>
+                            <form onSubmit={handleCreateCashBox} className="new-cashbox-form">
+                                <input
+                                    type="text"
+                                    value={newCashBoxForm.name}
+                                    onChange={e => setNewCashBoxForm(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder="Nome da caixa (ex: Caixa Principal)"
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    value={newCashBoxForm.description}
+                                    onChange={e => setNewCashBoxForm(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Descrição (opcional)"
+                                />
+                                <select
+                                    value={newCashBoxForm.type}
+                                    onChange={e => setNewCashBoxForm(prev => ({ ...prev, type: e.target.value }))}
+                                >
+                                    <option value="DRAWER">Gaveta</option>
+                                    <option value="SAFE">Cofre</option>
+                                    <option value="REGISTER">Registadora</option>
+                                </select>
+                                <button type="submit" className="btn-save">Criar Caixa</button>
+                            </form>
+
+                            <div className="cashboxes-list">
+                                <h5>Caixas Ativas:</h5>
+                                {cashBoxes.length === 0 ? (
+                                    <p>Nenhuma caixa registada</p>
+                                ) : (
+                                    <div className="boxes-grid">
+                                        {cashBoxes.map(box => (
+                                            <div key={box.id} className="box-card">
+                                                <div className="box-header">
+                                                    <strong>{box.name}</strong>
+                                                    <span className="box-type">{box.type}</span>
+                                                </div>
+                                                <p className="box-desc">{box.description || '---'}</p>
+                                                <button
+                                                    type="button"
+                                                    className="btn-delete-box"
+                                                    onClick={() => handleDeleteCashBox(box.id)}
+                                                >
+                                                    🗑 Desativar
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                 <div className="cash-movements-card">
                     <h4>Últimos Movimentos de Caixa</h4>
