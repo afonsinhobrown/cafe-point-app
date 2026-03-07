@@ -9,6 +9,8 @@ import fs from 'fs';
 import routes from './routes';
 import { setupSocket } from './utils/socket';
 import { verifyLicense } from './utils/licenseManager';
+import { authenticate } from './middleware/auth';
+import prisma from './config/database';
 
 const app = express();
 const httpServer = createServer(app);
@@ -81,24 +83,47 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// ✅ License Status
-app.get('/api/license-status', (req, res) => {
-    const result = verifyLicense();
-    if (!result.valid) {
-        return res.status(403).json({
+// ✅ License Status (Autenticado - para usuários logados)
+app.get('/api/license-status', authenticate, async (req, res) => {
+    try {
+        // Obter usuário autenticado para licença real do restaurante
+        const user = (req as any).user;
+        
+        if (user && user.restaurantId) {
+            // Buscar licença real do banco de dados
+            const license = await prisma.license.findUnique({
+                where: { restaurantId: user.restaurantId },
+                include: { plan: true }
+            });
+
+            if (license && license.endDate) {
+                const now = new Date();
+                const endDate = new Date(license.endDate);
+                const diffTime = endDate.getTime() - now.getTime();
+                const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                return res.json({
+                    valid: daysRemaining > 0,
+                    daysRemaining: Math.max(0, daysRemaining),
+                    expiryDate: license.endDate,
+                    startDate: license.startDate,
+                    restaurantName: user.restaurantName || 'Restaurante',
+                    planName: license.plan?.name,
+                    status: license.status
+                });
+            }
+        }
+
+        // Se não encontrou licença no banco, retornar erro
+        return res.status(404).json({
             valid: false,
-            message: result.error,
-            machineId: result.machineId,
-            licenseError: true
+            message: 'Licença não encontrada para este restaurante',
+            daysRemaining: 0
         });
+    } catch (error) {
+        console.error('Erro ao obter status de licença:', error);
+        res.status(500).json({ valid: false, message: 'Erro ao verificar licença' });
     }
-    res.json({
-        valid: true,
-        daysRemaining: result.daysRemaining,
-        expiryDate: result.data?.expiryDate,
-        restaurantName: result.data?.restaurantName,
-        machineId: result.machineId
-    });
 });
 
 // ✅ Rotas da API
