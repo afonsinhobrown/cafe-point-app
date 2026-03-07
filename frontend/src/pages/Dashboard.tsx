@@ -37,11 +37,13 @@ const Dashboard: React.FC = () => {
 
                 // Fetch License Status
                 const resLicense = await getLicenseStatus();
+                console.log('📋 License Status Response:', resLicense.data);
                 setLicenseInfo(resLicense.data);
 
                 hasFetched.current = true;
             } catch (error) {
                 console.error('Erro ao buscar dados do dashboard:', error);
+                console.error('Detalhes do erro de licença:', error);
             }
         };
         fetchData();
@@ -54,9 +56,14 @@ const Dashboard: React.FC = () => {
                     <h1>{user?.restaurantName || 'CaféPoint'}</h1>
                     <div className="header-meta">
                         <p>Olá {user?.name}, o que gostaria de fazer hoje?</p>
-                        {licenseInfo && (
+                        {licenseInfo && licenseInfo.daysRemaining !== undefined && (
                             <span className={`license-badge ${licenseInfo.daysRemaining <= 2 ? 'warning' : ''}`}>
                                 🔑 Licença: {licenseInfo.daysRemaining} dias restantes
+                            </span>
+                        )}
+                        {!licenseInfo && (
+                            <span className="license-badge warning">
+                                ⚠️ Licença: Aguardando verificação...
                             </span>
                         )}
                     </div>
