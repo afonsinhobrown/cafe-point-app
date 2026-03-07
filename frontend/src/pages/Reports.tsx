@@ -515,61 +515,61 @@ const Reports: React.FC = () => {
                     )}
                 </div>
 
-                    {isCashBoxManager && (
-                        <div className="cash-box-manager-card">
-                            <h4>Gerenciar Caixas/Gavetas</h4>
-                            <form onSubmit={handleCreateCashBox} className="new-cashbox-form">
-                                <input
-                                    type="text"
-                                    value={newCashBoxForm.name}
-                                    onChange={e => setNewCashBoxForm(prev => ({ ...prev, name: e.target.value }))}
-                                    placeholder="Nome da caixa (ex: Caixa Principal)"
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    value={newCashBoxForm.description}
-                                    onChange={e => setNewCashBoxForm(prev => ({ ...prev, description: e.target.value }))}
-                                    placeholder="Descrição (opcional)"
-                                />
-                                <select
-                                    value={newCashBoxForm.type}
-                                    onChange={e => setNewCashBoxForm(prev => ({ ...prev, type: e.target.value }))}
-                                >
-                                    <option value="DRAWER">Gaveta</option>
-                                    <option value="SAFE">Cofre</option>
-                                    <option value="REGISTER">Registadora</option>
-                                </select>
-                                <button type="submit" className="btn-save">Criar Caixa</button>
-                            </form>
+                {isCashBoxManager && (
+                    <div className="cash-box-manager-card">
+                        <h4>Gerenciar Caixas/Gavetas</h4>
+                        <form onSubmit={handleCreateCashBox} className="new-cashbox-form">
+                            <input
+                                type="text"
+                                value={newCashBoxForm.name}
+                                onChange={e => setNewCashBoxForm(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="Nome da caixa (ex: Caixa Principal)"
+                                required
+                            />
+                            <input
+                                type="text"
+                                value={newCashBoxForm.description}
+                                onChange={e => setNewCashBoxForm(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="Descrição (opcional)"
+                            />
+                            <select
+                                value={newCashBoxForm.type}
+                                onChange={e => setNewCashBoxForm(prev => ({ ...prev, type: e.target.value }))}
+                            >
+                                <option value="DRAWER">Gaveta</option>
+                                <option value="SAFE">Cofre</option>
+                                <option value="REGISTER">Registadora</option>
+                            </select>
+                            <button type="submit" className="btn-save">Criar Caixa</button>
+                        </form>
 
-                            <div className="cashboxes-list">
-                                <h5>Caixas Ativas:</h5>
-                                {cashBoxes.length === 0 ? (
-                                    <p>Nenhuma caixa registada</p>
-                                ) : (
-                                    <div className="boxes-grid">
-                                        {cashBoxes.map(box => (
-                                            <div key={box.id} className="box-card">
-                                                <div className="box-header">
-                                                    <strong>{box.name}</strong>
-                                                    <span className="box-type">{box.type}</span>
-                                                </div>
-                                                <p className="box-desc">{box.description || '---'}</p>
-                                                <button
-                                                    type="button"
-                                                    className="btn-delete-box"
-                                                    onClick={() => handleDeleteCashBox(box.id)}
-                                                >
-                                                    🗑 Desativar
-                                                </button>
+                        <div className="cashboxes-list">
+                            <h5>Caixas Ativas:</h5>
+                            {cashBoxes.length === 0 ? (
+                                <p>Nenhuma caixa registada</p>
+                            ) : (
+                                <div className="boxes-grid">
+                                    {cashBoxes.map(box => (
+                                        <div key={box.id} className="box-card">
+                                            <div className="box-header">
+                                                <strong>{box.name}</strong>
+                                                <span className="box-type">{box.type}</span>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                            <p className="box-desc">{box.description || '---'}</p>
+                                            <button
+                                                type="button"
+                                                className="btn-delete-box"
+                                                onClick={() => handleDeleteCashBox(box.id)}
+                                            >
+                                                🗑 Desativar
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
+                )}
 
                 <div className="cash-movements-card">
                     <h4>Últimos Movimentos de Caixa</h4>
