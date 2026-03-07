@@ -250,3 +250,111 @@ export const suspendRestaurant = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Erro ao suspender' });
     }
 };
+
+export const applyPlanToRestaurant = async (req: Request, res: Response) => {
+    try {
+        const restaurantId = parseInt(req.params.id);
+        const { planId, startDate, endDate, durationDays } = req.body;
+
+        if (!restaurantId || !planId) {
+            return res.status(400).json({ success: false, message: 'Restaurante e plano são obrigatórios' });
+        }
+
+        const parsedPlanId = parseInt(String(planId));
+        if (!parsedPlanId) {
+            return res.status(400).json({ success: false, message: 'Plano inválido' });
+        }
+
+        const hasEndDate = typeof endDate === 'string' && endDate.trim() !== '';
+        const hasDuration = durationDays !== undefined && durationDays !== null && String(durationDays).trim() !== '';
+
+        if (hasEndDate && hasDuration) {
+            return res.status(400).json({ success: false, message: 'Use apenas um modo: data fim OU número de dias' });
+        }
+
+        const effectiveStart = startDate ? new Date(startDate) : new Date();
+        if (Number.isNaN(effectiveStart.getTime())) {
+            return res.status(400).json({ success: false, message: 'Data de início inválida' });
+        }
+
+        const restaurant = await prisma.restaurant.findUnique({
+            where: { id: restaurantId },
+            include: { license: { include: { plan: true } } }
+        });
+
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurante não encontrado' });
+        }
+
+        const selectedPlan = await prisma.plan.findUnique({ where: { id: parsedPlanId } });
+        if (!selectedPlan) {
+            return res.status(404).json({ success: false, message: 'Plano não encontrado' });
+        }
+
+        let effectiveEnd: Date | null = null;
+
+        if (hasEndDate) {
+            const parsedEnd = new Date(endDate);
+            if (Number.isNaN(parsedEnd.getTime())) {
+                return res.status(400).json({ success: false, message: 'Data de fim inválida' });
+            }
+
+            if (parsedEnd <= effectiveStart) {
+                return res.status(400).json({ success: false, message: 'Data de fim deve ser maior que a data de início' });
+            }
+
+            effectiveEnd = parsedEnd;
+        } else {
+            const days = hasDuration ? parseInt(String(durationDays), 10) : selectedPlan.duration;
+
+            if (!days || Number.isNaN(days) || days <= 0) {
+                return res.status(400).json({ success: false, message: 'Número de dias inválido' });
+            }
+
+            effectiveEnd = new Date(effectiveStart);
+            effectiveEnd.setDate(effectiveEnd.getDate() + days);
+        }
+
+        const updatedLicense = await prisma.$transaction(async (tx) => {
+            const license = await tx.license.upsert({
+                where: { restaurantId },
+                update: {
+                    planId: parsedPlanId,
+                    startDate: effectiveStart,
+                    endDate: effectiveEnd,
+                    status: 'ACTIVE'
+                },
+                create: {
+                    restaurantId,
+                    planId: parsedPlanId,
+                    startDate: effectiveStart,
+                    endDate: effectiveEnd,
+                    status: 'ACTIVE'
+                },
+                include: { plan: true }
+            });
+
+            await tx.planHistory.create({
+                data: {
+                    restaurantId,
+                    oldPlanName: restaurant.license?.plan?.name || null,
+                    newPlanName: selectedPlan.name,
+                    price: selectedPlan.monthlyPrice,
+                    startDate: effectiveStart,
+                    endDate: effectiveEnd,
+                    changedBy: (req as any).user?.username || 'SUPER_ADMIN'
+                }
+            });
+
+            return license;
+        });
+
+        return res.json({
+            success: true,
+            message: 'Plano aplicado com sucesso',
+            data: updatedLicense
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Erro ao aplicar plano no restaurante' });
+    }
+};

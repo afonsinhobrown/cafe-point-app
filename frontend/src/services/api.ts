@@ -130,6 +130,10 @@ export const registerRestaurant = (data: any) => api.post('/auth/register-restau
 export const getAdminStats = () => api.get('/admin/stats');
 export const getAdminRestaurants = (params?: any) => api.get('/admin/restaurants', { params });
 export const updateRestaurantStatus = (id: number, status: string) => api.put(`/admin/restaurants/${id}/status`, { status });
+export const applyRestaurantPlan = (
+    restaurantId: number,
+    data: { planId: number; startDate?: string; endDate?: string; durationDays?: number }
+) => api.post(`/admin/restaurants/${restaurantId}/apply-plan`, data);
 
 // License
 export const getLicenseStatus = () => api.get('/license-status');

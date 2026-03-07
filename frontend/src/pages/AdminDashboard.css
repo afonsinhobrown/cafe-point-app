@@ -367,3 +367,101 @@
     gap: 16px;
     border: 1px dashed var(--border-color);
 }
+
+.validity-block {
+    font-size: 0.82rem;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.apply-plan-modal {
+    max-width: 560px;
+    width: 92%;
+    padding: 22px;
+    background: #ffffff;
+    border-radius: 14px;
+}
+
+.apply-plan-form {
+    display: grid;
+    gap: 14px;
+}
+
+.apply-plan-form label {
+    display: grid;
+    gap: 6px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.apply-plan-form input,
+.apply-plan-form select {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    background: #f8fafc;
+}
+
+.apply-mode-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.mode-button {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mode-button.active {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #ffffff;
+}
+
+.apply-plan-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.btn-secondary {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .admin-content {
+        padding: 16px;
+    }
+
+    .admin-dashboard-layout {
+        display: block;
+        height: auto;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+    }
+
+    .admin-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .apply-mode-row {
+        grid-template-columns: 1fr;
+    }
+}

@@ -71,12 +71,18 @@ export const requestUpgrade = async (req: Request, res: Response) => {
         });
 
         // 📝 Registrar no Histórico do Restaurante
+        const planStartDate = new Date();
+        const planEndDate = new Date(planStartDate);
+        planEndDate.setDate(planEndDate.getDate() + (newPlan.duration || 30));
+
         await prisma.planHistory.create({
             data: {
                 restaurantId,
                 oldPlanName: currentLicense?.plan?.name || 'Incial',
                 newPlanName: newPlan.name,
                 price: newPlan.monthlyPrice,
+                startDate: planStartDate,
+                endDate: planEndDate,
                 changedBy: user.username
             }
         });

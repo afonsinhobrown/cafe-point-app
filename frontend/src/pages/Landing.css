@@ -222,6 +222,7 @@
 }
 
 @media (max-width: 900px) {
+
     .culinary-gallery,
     .plans-grid {
         grid-template-columns: 1fr;

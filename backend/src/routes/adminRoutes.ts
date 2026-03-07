@@ -11,7 +11,8 @@ import {
     getAdminDevices,    // NOVO
     approveDevice,      // NOVO
     blockDevice,        // NOVO
-    getRestaurantPlanHistory // NOVO
+    getRestaurantPlanHistory, // NOVO
+    applyPlanToRestaurant
 } from '../controllers/adminController';
 import { isSuperAdmin } from '../middleware/auth';
 
@@ -29,6 +30,7 @@ router.get('/restaurants', getAllRestaurants);
 router.post('/restaurants/:id/approve', approveRestaurant);
 router.post('/restaurants/:id/suspend', suspendRestaurant);
 router.get('/restaurants/:id/history', getRestaurantPlanHistory); // NOVO
+router.post('/restaurants/:id/apply-plan', applyPlanToRestaurant);
 
 // Planos (CRUD Real)
 router.get('/plans', getAdminPlans);
