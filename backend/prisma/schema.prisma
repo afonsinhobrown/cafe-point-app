@@ -40,6 +40,8 @@ model Restaurant {
   stockMovements StockMovement[]
   planHistory   PlanHistory[]
   expenses      Expense[]
+  cashSessions  CashSession[]
+  cashMovements CashMovement[]
   reservations  Reservation[]
   customers     Customer[]
   attendances   Attendance[]
@@ -120,6 +122,9 @@ model User {
   createdAt     DateTime @default(now())
   orders        Order[]
   stockMovements StockMovement[]
+  cashSessionsOpened CashSession[] @relation("CashSessionOpenedBy")
+  cashSessionsClosed CashSession[] @relation("CashSessionClosedBy")
+  cashMovements      CashMovement[]
   attendances   Attendance[]
 
   @@unique([username, restaurantId])
@@ -284,6 +289,37 @@ model Expense {
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model CashSession {
+  id             Int       @id @default(autoincrement())
+  restaurantId   Int
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
+  openedByUserId Int
+  openedByUser   User      @relation("CashSessionOpenedBy", fields: [openedByUserId], references: [id])
+  closedByUserId Int?
+  closedByUser   User?     @relation("CashSessionClosedBy", fields: [closedByUserId], references: [id])
+  openingBalance Float     @default(0)
+  closingBalance Float?
+  status         String    @default("OPEN")
+  openedAt       DateTime  @default(now())
+  closedAt       DateTime?
+  notes          String?
+  movements      CashMovement[]
+}
+
+model CashMovement {
+  id             Int       @id @default(autoincrement())
+  restaurantId   Int
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
+  cashSessionId  Int
+  cashSession    CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User      @relation(fields: [userId], references: [id])
+  type           String
+  amount         Float
+  description    String?
+  createdAt      DateTime  @default(now())
 }
 
 model Reservation {

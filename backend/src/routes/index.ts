@@ -13,6 +13,7 @@ import subscriptionRoutes from './subscriptionRoutes';
 import teamRoutes from './teamRoutes';
 import restaurantRoutes from './restaurantRoutes';
 import expenseRoutes from './expenseRoutes';
+import cashRoutes from './cashRoutes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/orders', orderRoutes);
 router.use('/menu', menuRoutes);
 router.use('/locations', locationRoutes);
 router.use('/expenses', expenseRoutes);
+router.use('/cash', cashRoutes);
 router.use('/reports', authenticateToken, isAdmin, reportRoutes);
 router.use('/stock', authenticateToken, isAdmin, stockRoutes);
 router.use('/catalog', authenticateToken, isAdmin, catalogRoutes);

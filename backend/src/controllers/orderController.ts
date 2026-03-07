@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 import { checkTrialLimit } from '../utils/trialLimits';
+import { ensureCashSessionOpen } from '../utils/cashSession';
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
     try {
@@ -234,6 +235,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
         const { id } = req.params;
         const { status } = req.body;
         const restaurantId = req.user?.restaurantId;
+        const userId = req.user?.id;
 
         // Ensure ownership via findFirst
         const existingOrder = await prisma.order.findFirst({
@@ -242,15 +244,49 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
 
         if (!existingOrder) return res.status(404).json({ success: false, message: 'Pedido não encontrado' });
 
-        const order = await prisma.order.update({
-            where: { id: parseInt(id) },
-            data: { status },
-            include: {
-                table: { include: { location: true } },
-                user: { select: { id: true, name: true } },
-                orderItems: { include: { menuItem: true } }
+        let order;
+
+        if (status === 'PAID' && existingOrder.status !== 'PAID') {
+            if (!userId) {
+                return res.status(401).json({ success: false, message: 'Acesso negado' });
             }
-        });
+
+            const openCash = await ensureCashSessionOpen(restaurantId!);
+            order = await prisma.$transaction(async (tx) => {
+                const paidOrder = await tx.order.update({
+                    where: { id: parseInt(id) },
+                    data: { status },
+                    include: {
+                        table: { include: { location: true } },
+                        user: { select: { id: true, name: true } },
+                        orderItems: { include: { menuItem: true } }
+                    }
+                });
+
+                await tx.cashMovement.create({
+                    data: {
+                        restaurantId: restaurantId!,
+                        cashSessionId: openCash.id,
+                        userId,
+                        type: 'ENTRY',
+                        amount: Number(paidOrder.totalAmount || 0),
+                        description: `Pagamento Pedido #${paidOrder.id}`
+                    }
+                });
+
+                return paidOrder;
+            });
+        } else {
+            order = await prisma.order.update({
+                where: { id: parseInt(id) },
+                data: { status },
+                include: {
+                    table: { include: { location: true } },
+                    user: { select: { id: true, name: true } },
+                    orderItems: { include: { menuItem: true } }
+                }
+            });
+        }
 
         const io = (req as any).io;
         if (io) io.emit('orderUpdated', order);

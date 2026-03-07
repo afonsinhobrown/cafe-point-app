@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from 'date-fns';
 import { AuthRequest } from '../middleware/auth';
+import { calculateCashSessionBalance, getOpenCashSession } from '../utils/cashSession';
 
 export const getBillingStats = async (req: AuthRequest, res: Response) => {
     try {
@@ -36,13 +37,19 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
                 endDate = endOfDay(now);
         }
 
-        // TODO: Reativar filtro de data quando estável
-        /* const timeRange = {
+        const orderTimeRange = {
             createdAt: {
                 gte: startDate,
                 lte: endDate
             }
-        }; */
+        };
+
+        const stockTimeRange = {
+            createdAt: {
+                gte: startDate,
+                lte: endDate
+            }
+        };
 
         console.log(`Buscando estatísticas (SaaS Manual) para tenant ${restaurantId} - período: ${period}`);
 
@@ -50,8 +57,8 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
         const allStatsOrders = await prisma.order.findMany({
             where: {
                 ...tenantFilter,
-                status: { not: 'CANCELLED' }
-                // Sem filtro de data temporariamente
+                status: { not: 'CANCELLED' },
+                ...orderTimeRange
             }
         });
 
@@ -81,7 +88,7 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
                     { status: 'PAID' },
                     { status: 'SERVED' }
                 ],
-                // ...timeRange 
+                ...orderTimeRange
             },
             include: {
                 orderItems: {
@@ -89,6 +96,33 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
                 }
             }
         });
+
+        const topDishMap: Record<string, { qty: number; revenue: number }> = {};
+        paidOrders.forEach(order => {
+            order.orderItems.forEach(item => {
+                const itemType = item.menuItem.itemType || 'PRODUCT';
+                if (itemType !== 'DISH') {
+                    return;
+                }
+                const key = item.menuItem.name;
+                if (!topDishMap[key]) {
+                    topDishMap[key] = { qty: 0, revenue: 0 };
+                }
+                topDishMap[key].qty += item.quantity;
+                topDishMap[key].revenue += item.quantity * item.price;
+            });
+        });
+
+        let topConsumedDish: { name: string; quantity: number; revenue: number } | null = null;
+        for (const [name, stats] of Object.entries(topDishMap)) {
+            if (!topConsumedDish || stats.qty > topConsumedDish.quantity) {
+                topConsumedDish = {
+                    name,
+                    quantity: stats.qty,
+                    revenue: stats.revenue
+                };
+            }
+        }
 
         const salesByCategory: { [key: string]: number } = {};
         const costByCategory: { [key: string]: number } = {};
@@ -114,8 +148,8 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
         const purchasesWithSupplier = await prisma.stockMovement.findMany({
             where: {
                 ...tenantFilter,
-                type: 'ENTRY'
-                // ...timeRange
+                type: 'ENTRY',
+                ...stockTimeRange
             },
             include: { supplier: true }
         });
@@ -128,6 +162,24 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
             const value = Math.abs(m.quantity) * (m.purchasePrice || 0);
             purchasesBySupplier[sName] = (purchasesBySupplier[sName] || 0) + value;
         });
+
+        const activeCashSession = await getOpenCashSession(restaurantId);
+        let cashSummary = {
+            isOpen: false,
+            currentBalance: 0,
+            openingBalance: 0,
+            openedAt: null as Date | null
+        };
+
+        if (activeCashSession) {
+            const currentBalance = await calculateCashSessionBalance(activeCashSession.id, activeCashSession.openingBalance);
+            cashSummary = {
+                isOpen: true,
+                currentBalance,
+                openingBalance: activeCashSession.openingBalance,
+                openedAt: activeCashSession.openedAt
+            };
+        }
 
         res.json({
             success: true,
@@ -143,7 +195,9 @@ export const getBillingStats = async (req: AuthRequest, res: Response) => {
                 period,
                 salesByCategory,
                 costByCategory,
-                purchasesBySupplier
+                purchasesBySupplier,
+                topConsumedDish,
+                cashSummary
             }
         });
     } catch (error) {

@@ -116,6 +116,13 @@ export const deleteSupplier = (id: number) => api.delete(`/catalog/suppliers/${i
 export const getStats = (period: string) => api.get(`/reports/stats?period=${period}`);
 export const getOrderHistory = (params: any) => api.get('/reports/history', { params });
 
+// Cash / Caixa
+export const getCashStatus = () => api.get('/cash/status');
+export const openCashSession = (data: { openingBalance: number; notes?: string }) => api.post('/cash/open', data);
+export const closeCashSession = (data: { closingBalance?: number; notes?: string }) => api.post('/cash/close', data);
+export const getCashMovements = (params?: any) => api.get('/cash/movements', { params });
+export const createCashMovement = (data: { type: 'ENTRY' | 'WITHDRAWAL' | 'INTERNAL_TRANSFER'; amount: number; description?: string }) => api.post('/cash/movements', data);
+
 // Auth (SaaS)
 export const registerRestaurant = (data: any) => api.post('/auth/register-restaurant', data);
 

@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { getStats, getOrderHistory, updateOrderStatus, getMenu, api } from '../services/api';
+import {
+    getStats,
+    getOrderHistory,
+    updateOrderStatus,
+    getMenu,
+    getCashStatus,
+    openCashSession,
+    closeCashSession,
+    getCashMovements,
+    createCashMovement,
+    api
+} from '../services/api';
 import { generateFinancialReport, generateInventoryReport } from '../services/reportService';
 import ReceiptModal from '../components/ReceiptModal';
 import ExpenseModal, { ExpenseFormData } from '../components/ExpenseModal';
@@ -32,6 +43,16 @@ const Reports: React.FC = () => {
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [lowStockItems, setLowStockItems] = useState<any[]>([]);
+    const [cashStatus, setCashStatus] = useState<any>({ isOpen: false, session: null, currentBalance: 0 });
+    const [cashMovements, setCashMovements] = useState<any[]>([]);
+    const [openingBalance, setOpeningBalance] = useState('0');
+    const [closingBalance, setClosingBalance] = useState('');
+    const [cashActionLoading, setCashActionLoading] = useState(false);
+    const [cashMovementForm, setCashMovementForm] = useState({
+        type: 'ENTRY',
+        amount: '',
+        description: ''
+    });
 
     const periods = [
         { id: 'day', label: 'Hoje' },
@@ -47,21 +68,24 @@ const Reports: React.FC = () => {
     const loadData = async () => {
         try {
             setIsLoading(true);
-            const statsRes = await getStats(period);
+            const [statsRes, ordersRes, menuRes, expensesRes, cashStatusRes, cashMovementsRes] = await Promise.all([
+                getStats(period),
+                getOrderHistory({ limit: 10 }),
+                getMenu({ all: 'true' }),
+                api.get('/expenses'),
+                getCashStatus(),
+                getCashMovements({ limit: 20 })
+            ]);
+
             setStats(statsRes.data.data);
-
-            const ordersRes = await getOrderHistory({ limit: 10 });
             setRecentOrders(ordersRes.data.data);
-
-            const menuRes = await getMenu({ all: 'true' });
             const lowStock = menuRes.data.data.filter((item: any) =>
                 item.stockQuantity !== null && item.stockQuantity <= (item.minStock || 5)
             );
             setLowStockItems(lowStock);
-
-            // Fetch Expenses
-            const expensesRes = await api.get('/expenses');
             setExpenses(expensesRes.data.data);
+            setCashStatus(cashStatusRes.data.data);
+            setCashMovements(cashMovementsRes.data.data || []);
         } catch (error) {
             console.error('Erro ao carregar relatórios:', error);
         } finally {
@@ -149,9 +173,9 @@ const Reports: React.FC = () => {
             await api.post('/expenses', data);
             setIsExpenseModalOpen(false);
             await loadData(); // Recarregar dados
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao criar despesa:', error);
-            alert('Erro ao registar despesa');
+            alert(error?.response?.data?.message || 'Erro ao registar despesa');
         }
     };
 
@@ -164,6 +188,52 @@ const Reports: React.FC = () => {
         } catch (error) {
             console.error('Erro ao remover despesa:', error);
             alert('Erro ao remover despesa');
+        }
+    };
+
+    const handleOpenCash = async () => {
+        try {
+            setCashActionLoading(true);
+            await openCashSession({ openingBalance: Number(openingBalance) || 0 });
+            await loadData();
+        } catch (error: any) {
+            alert(error?.response?.data?.message || 'Erro ao abrir caixa');
+        } finally {
+            setCashActionLoading(false);
+        }
+    };
+
+    const handleCloseCash = async () => {
+        try {
+            setCashActionLoading(true);
+            await closeCashSession({
+                closingBalance: closingBalance.trim() === '' ? undefined : Number(closingBalance)
+            });
+            setClosingBalance('');
+            await loadData();
+        } catch (error: any) {
+            alert(error?.response?.data?.message || 'Erro ao fechar caixa');
+        } finally {
+            setCashActionLoading(false);
+        }
+    };
+
+    const handleCreateCashMovement = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        try {
+            setCashActionLoading(true);
+            await createCashMovement({
+                type: cashMovementForm.type as 'ENTRY' | 'WITHDRAWAL' | 'INTERNAL_TRANSFER',
+                amount: Number(cashMovementForm.amount),
+                description: cashMovementForm.description
+            });
+            setCashMovementForm({ type: 'ENTRY', amount: '', description: '' });
+            await loadData();
+        } catch (error: any) {
+            alert(error?.response?.data?.message || 'Erro ao registrar movimento de caixa');
+        } finally {
+            setCashActionLoading(false);
         }
     };
 
@@ -254,6 +324,126 @@ const Reports: React.FC = () => {
                     <h3>Faturação Pendente</h3>
                     <p className="stat-value">MT {stats?.pendingRevenue?.toFixed(2) || '0.00'}</p>
                     <span className="stat-sub">{stats?.pendingCount || 0} pedidos em aberto</span>
+                </div>
+                <div className="stat-card no-print">
+                    <h3>Prato Mais Consumido</h3>
+                    <p className="stat-value">{stats?.topConsumedDish?.name || 'Sem dados'}</p>
+                    <span className="stat-sub">
+                        {stats?.topConsumedDish ? `${stats.topConsumedDish.quantity} unidades no período` : 'Sem vendas de pratos no período'}
+                    </span>
+                </div>
+            </div>
+
+            <div className="cash-section no-print">
+                <div className="cash-main-card">
+                    <div className="cash-header">
+                        <div>
+                            <h3>Caixa</h3>
+                            <p>
+                                Status atual:
+                                <strong className={cashStatus?.isOpen ? 'cash-open' : 'cash-closed'}>
+                                    {cashStatus?.isOpen ? ' Aberto' : ' Fechado'}
+                                </strong>
+                            </p>
+                        </div>
+                        <div className="cash-balance">
+                            <span>Saldo atual</span>
+                            <strong>MT {(cashStatus?.currentBalance || 0).toFixed(2)}</strong>
+                        </div>
+                    </div>
+
+                    {!cashStatus?.isOpen ? (
+                        <div className="cash-open-form">
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={openingBalance}
+                                onChange={e => setOpeningBalance(e.target.value)}
+                                placeholder="Saldo inicial"
+                            />
+                            <button onClick={handleOpenCash} disabled={cashActionLoading}>
+                                {cashActionLoading ? 'Abrindo...' : 'Abrir Caixa'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="cash-actions-grid">
+                            <form onSubmit={handleCreateCashMovement} className="cash-movement-form">
+                                <select
+                                    value={cashMovementForm.type}
+                                    onChange={e => setCashMovementForm(prev => ({ ...prev, type: e.target.value }))}
+                                >
+                                    <option value="ENTRY">Entrada</option>
+                                    <option value="WITHDRAWAL">Saque</option>
+                                    <option value="INTERNAL_TRANSFER">Transferência Interna</option>
+                                </select>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={cashMovementForm.amount}
+                                    onChange={e => setCashMovementForm(prev => ({ ...prev, amount: e.target.value }))}
+                                    placeholder="Valor"
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    value={cashMovementForm.description}
+                                    onChange={e => setCashMovementForm(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Descrição"
+                                />
+                                <button type="submit" disabled={cashActionLoading}>
+                                    {cashActionLoading ? 'Registrando...' : 'Registrar Movimento'}
+                                </button>
+                            </form>
+
+                            <div className="cash-close-form">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={closingBalance}
+                                    onChange={e => setClosingBalance(e.target.value)}
+                                    placeholder="Saldo contado (opcional)"
+                                />
+                                <button onClick={handleCloseCash} disabled={cashActionLoading}>
+                                    {cashActionLoading ? 'Fechando...' : 'Fechar Caixa'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="cash-movements-card">
+                    <h4>Últimos Movimentos de Caixa</h4>
+                    <div className="table-responsive">
+                        <table className="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cashMovements.map(m => (
+                                    <tr key={m.id}>
+                                        <td>{new Date(m.createdAt).toLocaleString()}</td>
+                                        <td>{m.type}</td>
+                                        <td>{m.description || '---'}</td>
+                                        <td style={{ color: m.amount >= 0 ? '#166534' : '#991b1b', fontWeight: 700 }}>
+                                            {m.amount >= 0 ? '+' : '-'} MT {Math.abs(m.amount).toFixed(2)}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {cashMovements.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} style={{ textAlign: 'center', padding: '20px' }}>
+                                            Nenhum movimento de caixa registrado.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 

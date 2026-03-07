@@ -198,3 +198,104 @@
     background: rgba(245, 158, 11, 0.1);
     color: #854d0e;
 }
+
+.cash-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+.cash-main-card,
+.cash-movements-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
+}
+
+.cash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cash-balance {
+    text-align: right;
+}
+
+.cash-balance span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.cash-balance strong {
+    font-size: 1.4rem;
+    color: var(--text-main);
+}
+
+.cash-open {
+    color: #166534;
+}
+
+.cash-closed {
+    color: #991b1b;
+}
+
+.cash-open-form,
+.cash-close-form,
+.cash-movement-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.cash-close-form {
+    grid-template-columns: 2fr 1fr;
+}
+
+.cash-actions-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.cash-open-form input,
+.cash-close-form input,
+.cash-movement-form input,
+.cash-movement-form select {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: #fff;
+}
+
+.cash-open-form button,
+.cash-close-form button,
+.cash-movement-form button {
+    border: none;
+    border-radius: 10px;
+    background: var(--primary-gradient);
+    color: white;
+    font-weight: 700;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.cash-movements-card h4 {
+    margin-top: 0;
+}
+
+@media (max-width: 900px) {
+
+    .cash-open-form,
+    .cash-close-form,
+    .cash-movement-form {
+        grid-template-columns: 1fr;
+    }
+}

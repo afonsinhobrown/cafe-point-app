@@ -59,6 +59,33 @@ export const createManualMovement = async (req: Request, res: Response) => {
         });
         if (!menuItem) return res.status(404).json({ success: false, message: 'Item não encontrado' });
 
+        const numericQuantity = parseInt(String(quantity), 10);
+        if (!Number.isFinite(numericQuantity) || numericQuantity === 0) {
+            return res.status(400).json({ success: false, message: 'Quantidade inválida para movimento.' });
+        }
+
+        const allowedTypes = new Set(['ENTRY', 'LOSS', 'ADJUSTMENT']);
+        if (!allowedTypes.has(type)) {
+            return res.status(400).json({ success: false, message: 'Tipo de movimento inválido.' });
+        }
+
+        let signedQuantity = Math.abs(numericQuantity);
+        if (type === 'LOSS') {
+            signedQuantity = -Math.abs(numericQuantity);
+        }
+        if (type === 'ADJUSTMENT') {
+            signedQuantity = numericQuantity;
+        }
+
+        const currentStock = menuItem.stockQuantity || 0;
+        const resultingStock = currentStock + signedQuantity;
+        if (resultingStock < 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Movimento inválido. Stock ficaria negativo para ${menuItem.name}.`
+            });
+        }
+
         // Verificar limite trial
         await checkTrialLimit('stockMovement', restaurantId);
 
@@ -79,7 +106,7 @@ export const createManualMovement = async (req: Request, res: Response) => {
                 data: {
                     restaurantId,
                     menuItemId: parseInt(menuItemId),
-                    quantity: parseInt(quantity),
+                    quantity: signedQuantity,
                     type,
                     purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
                     sellingPrice: sellingPrice ? parseFloat(sellingPrice) : null,
@@ -94,9 +121,7 @@ export const createManualMovement = async (req: Request, res: Response) => {
             await tx.menuItem.update({
                 where: { id: parseInt(menuItemId) },
                 data: {
-                    stockQuantity: {
-                        [type === 'ENTRY' || type === 'ADJUSTMENT' && parseInt(quantity) > 0 ? 'increment' : 'decrement']: Math.abs(parseInt(quantity))
-                    }
+                    stockQuantity: resultingStock
                 }
             });
 
